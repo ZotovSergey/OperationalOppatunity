@@ -5,7 +5,7 @@ if __name__ == '__main__':
                        pack.ELLIPSOID_AXISES_WGS_84().c)
 
     utc_time1 = pack.datetime(2019, 6, 5, 0, 0, 0)
-    utc_time2 = pack.datetime(2029, 6, 5, 0, 0, 0)
+    utc_time2 = pack.datetime(2020, 6, 5, 0, 0, 0)
     startDay = 121
     endDay = 274
 
@@ -38,20 +38,29 @@ if __name__ == '__main__':
     group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//2//')
     print(pack.datetime.now() - startTime)
 
-    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2019-2029 неполный год (повтор)//', 90, 3)
-    group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
+    group.satList[0].predictTrack(utc_time1, utc_time2, 0, 366, 1, None, 75, 'D://results//2019-2020 полный год (для тестирования старой модели)//', 90, 3)
+    group.satList[0].graphs(utc_time1, utc_time2, 0, 366, 24 * 3600)
 
-
-    utc_time1 = pack.datetime(2009, 6, 5, 0, 0, 0)
-    utc_time2 = pack.datetime(2039, 6, 5, 0, 0, 0)
 
     startTime = pack.datetime.now()
     group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
     group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//2//')
     print(pack.datetime.now() - startTime)
 
-    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2009-2019 неполный год//', 90, 3)
+    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2019-2020 неполный год (для тестирования старой модели)//', 90, 3)
     group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
+
+
+    #utc_time1 = pack.datetime(2009, 6, 5, 0, 0, 0)
+    #utc_time2 = pack.datetime(2039, 6, 5, 0, 0, 0)
+
+    #startTime = pack.datetime.now()
+    #group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
+    #group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//2//')
+    #print(pack.datetime.now() - startTime)
+
+    #group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2009-2019 неполный год//', 90, 3)
+    #group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
 
 
     '''
