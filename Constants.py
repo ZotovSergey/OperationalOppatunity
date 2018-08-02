@@ -11,5 +11,3 @@ def ELLIPSOID_AXISES_WGS_84():
     B = 6378.137
     C = 6356.75231424518
     return pack.MyGeometry.CanonEllipsoid(A, B, C)
-
-#Test commit

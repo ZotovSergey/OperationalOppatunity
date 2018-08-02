@@ -6,7 +6,7 @@ from shapely.geometry import Point                                              
 from shapely.geometry.polygon import Polygon                                                                            # Импорт класса Polygon для работы с многоугольниками на плоскости из пакета shapely
 from pyorbital.astronomy import sun_zenith_angle
 from SatelliteGroup import *
-from Coordinates import *
+from Coordinates2 import *
 from MyOrbital import *
 import MyGeometry
 from AdditionalFunctions import *

@@ -1,9 +1,15 @@
+import math
+# import Coordinates
+
+
 class EarthEllipsoid:
     """
     @Описание:
         Класс EarthEllipsoid моделирует земной эллипсоид с заданной большой полуосью и сжатием. По умолчанию (если
-            хотя бы один из аргументов semimajor_axis, f не задан) задаётся модель земного эллипсоида из
-            World Geodetic System 1984 (WGS-84) с большим радиусом 6378137 м сжатием - 1 / 298.257223563
+            хотя бы один из аргументов semi_major_axis, f не задан) задаётся модель земного эллипсоида из
+            World Geodetic System 1984 (WGS-84) с большим радиусом 6378137 м сжатием - 1 / 298.257223563. Также
+            предусматривается возможность приблизительного вычисления расстояния между двумя точками с известными
+            координатами на сфере с радиусом, соответсвующим большой полуоси моделируемого эллипсоида
 
     @Аргументы:
         semi_major_axis - большая полуось модели земного эллипсоида (км)
@@ -15,13 +21,16 @@ class EarthEllipsoid:
 
     @Поля класса:
         semi_major_axis - большая полуось модели земного эллипсоида (км). Полю присваивается значение аргумента
-            semimajor_axis, если аргумент semimajor_axis не задан (имеет значение None), полю semimajor_axis
-            присваивается начение константы SEMIMAJOR_AXIS_WGS_84
-        f - сжатие модели земного эллипсоида. Полю присваивается значение аргумента f, если аргумент semimajor_axis
+            semi_major_axis, если аргумент semi_major_axis не задан (имеет значение None), полю semi_major_axis
+            присваивается начение константы SEMI_MAJOR_AXIS_WGS_84
+        f - сжатие модели земного эллипсоида. Полю присваивается значение аргумента f, если аргумент semi_major_axis
             не задан (имеет значение None), полю f присваивается начение константы F_WGS_84
         semi_major_axis - малая полуось модели земного эллипсоида (км). Значение вычисляется при инициализации объекта
-            из аргументов semi_major_axis, если аргумент semimajor_axis не задан (имеет значение None), полю semimajor_axis
-            присваивается начение константы SEMI_MAJOR_AXIS_WGS_84
+            из аргументов semi_major_axis, если аргумент semi_major_axis не задан (имеет значение None), полю
+            semi_major_axis присваивается начение константы SEMI_MAJOR_AXIS_WGS_84
+
+    @Методы класса:
+        dist_between_geo_coordinates - вычисляет расстояние по кратчайшей дуге между двумя географическими координатами
     """
 
     SEMI_MAJOR_AXIS_WGS_84 = 6378.137
@@ -38,3 +47,36 @@ class EarthEllipsoid:
             self.f = f
         # Вычисление малой полуоси модели эллипсоида Земли
         self.semi_minor_axle = self.semi_major_axis * (1 - f)
+
+    def dist_between_geo_coordinates(self, geo_coordinate_1, geo_coordinate_2):
+        """
+        @Описание:
+            Метод вычисляет расстояние по кратчайшей дуге между двумя географическими координатами, записанными в
+            аргументы geo_coordinate_1 и geo_coordinate_2. При вычислении считаем, что Земля - шар с радиусом
+            self.semi_major_axis.Вычисление производится по модифицированной формуле гаверсинусов
+        :param geo_coordinate_1: объект класса Coordinates.GeoCoordinate, содержащий координаты некоторой точки
+        :param geo_coordinate_2: объект класса Coordinates.GeoCoordinate, содержащий координаты некоторой точки
+        :return: расстояние между точками с координатами geo_coordinate_1 и geo_coordinate_2 по кратчайшей дуге в
+            километрах
+        """
+        # Перевод градусов широты в радианы
+        lat1 = math.pi * geo_coordinate_1.lat / 180
+        lat2 = math.pi * geo_coordinate_2.lat / 180
+        # Вычисление разницы между градусами долготы первой и второй точек и перевод в радианы
+        delta_long = math.pi * (geo_coordinate_1.long - geo_coordinate_2.long) / 180
+        # Вычисления значений тригоометрических функций
+        sin_lat1 = math.sin(lat1)
+        cos_lat1 = math.cos(lat1)
+        sin_lat2 = math.sin(lat2)
+        cos_lat2 = math.cos(lat2)
+        sin_delta_long = math.sin(delta_long)
+        cos_delta_long = math.cos(delta_long)
+        # Вучисление угла между точками по модифицированной формуле гаверсинусов
+        delta_small_angle = math.atan((((cos_lat2 * sin_delta_long) ** 2 +
+                                        (cos_lat1 * sin_lat2 - sin_lat1 * cos_lat2 * cos_delta_long) ** 2) ** 0.5) /
+                                      (sin_lat1 * sin_lat2 + cos_lat1 * cos_lat2 * cos_delta_long))
+        # Приведение угла delta_small_angle к положительному значению
+        if delta_small_angle < 0:
+            delta_small_angle += math.pi
+
+        return delta_small_angle * self.semi_major_axis

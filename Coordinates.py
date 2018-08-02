@@ -1,45 +1,44 @@
-import Packeges as pack
-import math
+from shapely.geometry import Point
 
-EARTH_RADIUS = 6378.137
 
-# Класс Coordinate объединяет широту, долготу и высоту некоторой точки в одну структуру
-class GeoCoordinate:
-    def __init__(self, long, lat, alt):                                                                                 # Конструктор класса Coordinate принимает широту (градусы), долготу long (градусы), высоту alt (километры)
-        self.long = long                                                                                                # Присвоение полю long значения long
-        self.lat = lat                                                                                                  # Присвоение полю lat значения lat
+class GeoCoordinates:
+    """
+    @Описание:
+        Структура, содержащая географические координаты: географическую долготу, географическую широту и высоту над
+            поверхностью Земли
+
+    @Аргументы:
+        long - георграфическая долгота
+        lat - географическая широта
+        alt - высота над поверхностью Земли в километрах
+
+    @Поля:
+        long - георграфическая долгота. При инициализации присваивается значение аргумента long
+        lat - географическая широта. При инициализации присваивается значение аргумента lat
+        alt - высота над поверхностью Земли. При инициализации присваивается значение аргумента alt
+    """
+
+    def __init__(self, long, lat, alt):
+        self.long = long
+        self.lat = lat
         self.alt = alt
 
-    def __str__(self):
-        return (str(self.lat) + '\t' + str(self.long) + '\t' + str(self.alt))
 
-    def nulAlt(self):
-        return GeoCoordinate(self.long, self.lat, 0)
+class GeoCoordinatesAndPoint:
+    """
+    @Описание:
+        Структура, содержащая объект GeoCoordinates и объект shapely.geometry.Point
 
+    @Аргументы:
+        long - георграфическая долгота
+        lat - географическая широта
+        alt - высота над поверхностью Земли
 
-class DecartCoordinate:
-    def __init__(self, decCoord):
-        self.decCoord = decCoord
-
-def distBetweenDecCoord(decCoord1, decCoord2):
-    lat1 = math.pi * decCoord1.lat / 180
-    lat2 = math.pi * decCoord2.lat / 180
-    deltaLong = math.pi * (decCoord1.long - decCoord2.long) / 180
-
-    sinLat1 = math.sin(lat1)
-    cosLat1 = math.cos(lat1)
-    sinLat2 = math.sin(lat2)
-    cosLat2 = math.cos(lat2)
-    sinDelLong = math.sin(deltaLong)
-    cosDelLong = math.cos(deltaLong)
-
-    delAngle = math.atan((((cosLat2 * sinDelLong) ** 2 + (cosLat1 * sinLat2
-            - sinLat1 * cosLat2 * cosDelLong) ** 2) ** 0.5)
-            / (sinLat1 * sinLat2 + cosLat1 * cosLat2 * cosDelLong))
-
-    if delAngle < 0:
-        delAngle += math.pi
-
-    return delAngle * EARTH_RADIUS
-
-
+    @Поля:
+        geo_coordinates - содержит объект GeoCoordinates, который создаётся при инициализации с аргументами
+            long, lat, alt
+        point - содержит объект shapely.geometry.Point, который создаётся при инициализации с аргументами long, lat
+    """
+    def __init__(self, long, lat, alt):
+        self.geo_coordinates = GeoCoordinates(long, lat, alt)
+        self.point = Point(long, lat)
