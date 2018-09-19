@@ -15,9 +15,10 @@ class ShapePolygonPack:
             self.shapeList.append(self.ShapePolygon(shape))
 
     def toSplitPoligons(self, latFineness, longFineness, earth):
+        f = open('D://pol2.txt', 'w')
         self.allSpace = 0
         for shapePolygon in self.shapeList:
-            shapePolygon.toSplitPolygon(latFineness, longFineness, earth)
+            shapePolygon.toSplitPolygon(latFineness, longFineness, earth, f)
             self.allSpace += shapePolygon.fullSpace
             self.fullSegmentList += shapePolygon.segmentsList
 
@@ -113,8 +114,7 @@ class ShapePolygonPack:
                     score /= scoreSum
             self.cloudDistr = cloudDistr
 
-        def toSplitPolygon(self, latFineness, longFineness, earth):
-            f = open('D://pol.txt', 'w')
+        def toSplitPolygon(self, latFineness, longFineness, earth, f):
 
             self.fullSpace = 0
 
@@ -141,7 +141,8 @@ class ShapePolygonPack:
                     if polygon.contains(point):
                         self.segmentsList.append(self.Segment(longSegment, latSegment, latSpaceGrid[i]))
                         self.fullSpace += latSpaceGrid[i]
-                        f.write(str(self.Segment(longSegment, latSegment, latSpaceGrid[i])) + '\n')
+                        f.write(str(longSegment) + '\t' + str(latSegment) + '\n')
+
                 i += 1
 
         def toCalculateSpaceGrid(self, latOfPolygonsSigments, longFineness, earth):

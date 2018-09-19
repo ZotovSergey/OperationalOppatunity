@@ -45,5 +45,3 @@ def decardToGeoCoordinates(decCoord, utc_time, alt):
             break
     geoCoord = pack.GeoCoordinate(rad2deg(lon), rad2deg(lat), alt)
     return geoCoord
-
-

@@ -46,7 +46,7 @@ class EarthEllipsoid:
             self.semi_major_axis = semi_major_axis
             self.f = f
         # Вычисление малой полуоси модели эллипсоида Земли
-        self.semi_minor_axle = self.semi_major_axis * (1 - f)
+        self.semi_minor_axle = self.semi_major_axis * (1 - self.f)
 
     def dist_between_geo_coordinates(self, geo_coordinate_1, geo_coordinate_2):
         """

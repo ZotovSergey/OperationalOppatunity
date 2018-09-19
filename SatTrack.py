@@ -4,7 +4,7 @@ if __name__ == '__main__':
     earth = pack.Earth(pack.ELLIPSOID_AXISES_WGS_84().a, pack.ELLIPSOID_AXISES_WGS_84().b,
                        pack.ELLIPSOID_AXISES_WGS_84().c)
 
-    utc_time1 = pack.datetime(2019, 6, 5, 0, 0, 0)
+    utc_time1 = pack.datetime(2019, 6, 7, 0, 0, 0)
     utc_time2 = pack.datetime(2020, 6, 5, 0, 0, 0)
     startDay = 121
     endDay = 274

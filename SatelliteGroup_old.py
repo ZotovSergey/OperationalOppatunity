@@ -55,6 +55,7 @@ class SatelliteGroup:
 
         # Метод predictTreck принимает объекты startTime и endTime класса datetime, которые содержат дату и время в формате utc и число step. Метод predictTreck прогнозирует трек спутника в интервал времени между startTime и endTime, при этом трэк записывается в виде списка объектов класса Coordinate, вычисляемых для моментов времени в выбранный интервал времени сшагом step (секунды)
         def predictTrack(self, startTime, endTime, startDay, endDay, step, oneCicle, minZenitAngle, address, solvePercent, maxCloudLevel):
+            f = open('D://track.txt', 'w')
             self.address = address
             self.file = open(address + 'Ход выполнения задачи.txt', 'w')
             self.file_sun = open(address + '(Солнце) Ход выполнения задачи.txt', 'w')
@@ -94,6 +95,9 @@ class SatelliteGroup:
 
                             decCoord, velVect = self.orbit.get_dec_and_vel(lastTime)
                             self.satTracks[i].append(self.SatelliteCoordinates(decCoord, velVect, lastTime, self.earth))
+                            for p in self.satTracks[i]:
+                                f.write(str(p.geoCoord.long) + '\t' + str(p.geoCoord.lat) + '\n')
+                            f.close()
                         self.swathCoords(self.satTracks)
                         self.satTracks = []
                         areas = self.toMakeAreasOfVidion()
@@ -145,6 +149,7 @@ class SatelliteGroup:
 
         def swathCoords(self, tracks):
             self.swathCoordList = []
+            f = open('D://swath.txt', 'w')
             for track in tracks:
                 self.swathCoordList.append([])
                 for satCoord in track:
@@ -168,6 +173,8 @@ class SatelliteGroup:
                                                                satCoord.utc_time, 0)
 
                     swathCoord = self.SwathCoordinate(leftPoints, rightPoints, satCoord.utc_time)
+                    f.write(str(leftPoints.long) + '\t' + str(leftPoints.lat) + '\n')
+                    f.write(str(rightPoints.long) + '\t' + str(rightPoints.lat) + '\n')
 
                     self.swathCoordList[-1].append(swathCoord)
 
