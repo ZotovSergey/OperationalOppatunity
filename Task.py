@@ -881,7 +881,6 @@ class Task:
                  присваивает self.time_of_solutions значение [];
         """
         self.growth_of_information = []
-        self.collecting_satellites = []
         self.time_of_growth_of_information = []
         self.time_of_solutions = []
 
