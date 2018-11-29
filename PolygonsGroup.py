@@ -1,14 +1,10 @@
-from datetime import datetime
-from calendar import isleap
 from shapefile import Reader
 from random import random
 from numpy import arange, concatenate, zeros
 from shapely import geometry
 import math
 import Coordinates
-
-# Номер дня 29 февраля в високосном году
-NUMBER_OF_29_FEB = 60
+import DateManagement
 
 
 class PolygonsGroup:
@@ -46,22 +42,25 @@ class PolygonsGroup:
             присваивается 0. Обновляется методом to_randomize_common_cloudiness объекта класса PolygonGroup.
     @Методы:
         to_read_shape_file(self, shape_file_address) – читает из shape-файла информацию о тестовых полигонах, полигоны
-            добавляются в список self.polygons_list
+            добавляются в список self.polygons_list.
+        to_set_polygons_names(self, polygons_names) - задает имена полигонам, входящим в моделируемую группу.
         to_split_all_polygons(self, lat_fineness, long_fineness, earth_ellipsoid) – разбивает каждый полигон в группе на
             сегменты с мелкостью разбиения lat_fineness по широте и long_fineness по долготе, вычисляет приблизительную
-            общую площадь всех полигонов в моделируемой группе
-        to_calc_grabbed_percent(self) – определяет ход выполнения тематической задачи – сколько процентов площади
-            тестовых полигонов попало в поле зрения ГСК, сколько раз
+            общую площадь всех полигонов в моделируемой группе.
+        to_calc_percentages_of_grabbed_areas(self) – определяет ход выполнения тематической задачи – сколько процентов
+            площади тестовых полигонов попало в поле зрения ГСК, сколько раз.
+        to_clear_count_of_grabs(self) - очищает все сегменты всех полигонов от "сканирований". То есть после применения
+            считается, что полигоны не сканировались.
         to_add_common_cloudiness_distr(self, common_cloudiness_distr_table, common_cloudiness_distr_ranges) - добавляет
             распределения вероятности появления облачности некоторого балла в районе, где находится моделируемая группа
-            полигонов для годовых периодов, границы которых также записываются
+            полигонов для годовых периодов, границы которых также записываются.
         to_add_cloudiness_distr_to_each_polygon(self, cloudiness_distr_tables_list, cloudiness_distr_ranges_list) -
             добавляет распределения вероятности появления облачности некоторого балла для каждого полигона в
-            моделируемой группе для годовых периодов, границы которых также записываются
-        to_normalize_distribution(distribution) - нормируетраспределение на единицу distribution
+            моделируемой группе для годовых периодов, границы которых также записываются.
+        to_normalize_distribution(distribution) - нормируетраспределение на единицу distribution.
         to_randomize_common_cloudiness(self, time) - случайно определяет текущий балл облачности для всей моделируемой
             группы полигонов в соответвии с распределением из self.common_cloudiness_distr_table для времени из
-            аргумента time
+            аргумента time.
     """
     def __init__(self, earth_ellipsoid):
         self.earth_ellipsoid = earth_ellipsoid
@@ -79,8 +78,8 @@ class PolygonsGroup:
                 описания формата shape-файла), из записанных в открытый shape-файл. На каждом витке создаётся объект
                 self.Polygon(shape, self.earth_ellipsoid), где shape - один из геометрических объектов типа “Polygon”,
                 self.earth_ellipsoid - объект EarthEllipsoid, задающий параметры эллипсоида Земли, на котором находится
-                полигон, и добавляется в self.polygonsList
-        :param shape_file_address: адресс shape-файла, из которого читыается информация о тестовых полигонах
+                полигон, и добавляется в self.polygonsList, задает стандартные имена.
+        :param shape_file_address: адресс shape-файла, из которого читается информация о тестовых полигонах.
         """
 
         # Чтение информации о полигонах из файла по адресу shape_file_address
@@ -91,6 +90,33 @@ class PolygonsGroup:
         # и запись в self.polygons_list в цикле
         for shape in shape_file_list:
             self.polygons_list.append(Polygon(shape, self.earth_ellipsoid))
+        # Задание полигонам стандартных названий: "Полигон 1", "Полигон 2", "Полигон 3" ...
+        self.to_set_polygons_names([])
+
+    def to_set_polygons_names(self, polygons_names):
+        """
+        Метод задает имена из списка polygons_names полигонам, входящим в моделируемую группу (self.polygons_list).
+            Полигонам из списка self.polygons_list сообщаются имена из списка polygons_names в соответствии их номерам
+            в списках. Полигонам, которым название не задано (None) или не хватает имен (если длина списка
+            self.polygons_list больше polygons_names), сообщается стандартное название "Полигон 1", "Полигон 2",
+            "Полигон 3" ...
+        :param polygons_names: список имен, присвиваемых полигонам из списка self.polygons_list (в списке допустимы
+            значения None)
+        :return:
+        """
+        number_of_unnamed_polygon = 1
+        i = 0
+        while i < len(polygons_names):
+            if polygons_names[i] is not None:
+                self.polygons_list[i].to_set_polygons_name(polygons_names[i])
+            else:
+                self.polygons_list[i].to_set_polygons_name('Полигон ' + str(number_of_unnamed_polygon))
+                number_of_unnamed_polygon += 1
+            i += 1
+        while i < len(self.polygons_list):
+            self.polygons_list[i].to_set_polygons_name('Полигон ' + str(number_of_unnamed_polygon))
+            number_of_unnamed_polygon += 1
+            i += 1
 
     def to_split_all_polygons(self, lat_fineness, long_fineness):
         """
@@ -112,11 +138,13 @@ class PolygonsGroup:
             # Площадь полигона из группы прибавляется к общей площади полигонов из моделируемой группы
             self.full_area += polygon.area
 
-    def to_calc_percentages_of_grabbed_areas(self):
+    def to_calc_percentages_of_grabbed_areas(self, result_in_percents=True):
         """
         @Описание:
-            Метод определяет ход выполнения тематической задачи – сколько процентов площади тестовых полигонов попало в
-                поле зрения ГСК, сколько раз
+            Метод определяет ход выполнения тематической задачи – какая площадь иили сколько процентов площади тестовых
+                полигонов попало в поле зрения ГСК, сколько раз
+        :param result_in_percents: если result_in_percents=True, то результат возвращается в процентах, если
+            result_in_percents=False, то результат возвращается в м^2
         :return: список, в каждом элементе которого содержится процент площади группы полигонов, захваченных в ПЗ ГСК n
             раз, где n равняется номеру элемента списка плюс один
         """
@@ -135,10 +163,25 @@ class PolygonsGroup:
                     if segment.count_of_grabs > i:
                         new_list_of_grabbed_segments.append(segment)
                     current_area += segment.space
-            percentages_of_grabbed_areas_list.append(current_area / self.full_area * 100)
+            # Вычисляется в м^2
+            percentages_of_grabbed_areas_list.append(current_area)
+            if result_in_percents:
+                # м^2 переводится в проценты
+                percentages_of_grabbed_areas_list[-1] /= self.full_area * 100
             segments_list = new_list_of_grabbed_segments
             i += 1
         return percentages_of_grabbed_areas_list
+
+    def to_clear_count_of_grabs(self):
+        """
+        @Описание:
+            Очищает все сегменты всех полигонов от "сканирований". То есть после применения считается, что полигоны не
+                сканировались.
+        :return: count_of_grabs каждого сегмента, каждого полигона в группе приравнивается к нулю.
+        """
+        for polygon in self.polygons_list:
+            for segment in polygon.segments_list:
+                segment.count_of_grabs = 0
 
     def to_add_common_cloudiness_distr(self, common_cloudiness_distr_table, common_cloudiness_distr_ranges):
         """
@@ -178,9 +221,9 @@ class PolygonsGroup:
     def to_normalize_distribution(distribution):
         """
         @Описание:
-            Метод нормируетраспределение на единицу distribution
-        :param distribution: нормируемое распределение
-        :return: нормированное на единицу распределение
+            Метод нормируетраспределение на единицу distribution.
+        :param distribution: нормируемое распределение.
+        :return: нормированное на единицу распределение.
         """
         elements_sum = zeros(len(distribution))
         for i in range(0, len(distribution)):
@@ -217,13 +260,14 @@ class Polygon:
     @Поля:
         shape – содержит геометрический объект типа “Polygon” (в терминах из описания shape-формата), прочитанный из
             shape-файла. Записанный геометрический объект определяет границы тестового полигона. При инициализации
-            объект в поле записывается значение аргумента shape
+            объект в поле записывается значение аргумента shape.
+        polygons_name - название полигона. При инициализации присваивается None. Задается методом to_set_polygons_name.
         segments_list – список, состоящий из объектов класса Segment, где каждый элемент обозначает один из сегментов на
-            которые разбит моделируемый полигон. Заполняется при применении метода to_split_polygon
+            которые разбит моделируемый полигон. Заполняется при применении метода to_split_polygon.
         polygons_area – площадь моделируемого полигона с некоторой точностью, равна общей площади всех сегментов, на
             которые разбит тестовый полигон, то есть сумма полей segments_area объектов Segment, входящих в список
             self.segmentsList. При инициализации объекта приравнивается к нулю, значение обновляется при применении
-            метода to_split_polygon
+            метода to_split_polygon.
         own_group - содержит объект PolygonsGroup - группу полигонов, к которой относится моделируемый полигон. В
             own_group содержится поле. Присваивается аргумент polygons_group при инициализации объекта.
             earth_ellipsoid, используещееся в вычислениях для моделируемого полигона.
@@ -251,6 +295,7 @@ class Polygon:
 
 
     @Методы
+        to_set_polygons_name(self, polygons_name) - задает название полигона.
         to_split_polygon(self, lat_fineness, long_fineness) - разделяет моделируемый полигон на сегменты с мелкостью
             разбиения по широте lat_fineness и по долготе long_fineness
         to_calculate_segments_area(self, lat_of_grids_nodes, longFineness) - метод вычисляет площади сегментов,
@@ -267,6 +312,7 @@ class Polygon:
     """
     def __init__(self, shape, polygon_group):
         self.shape = shape
+        self.polygons_name = None
         self.segments_list = []
         self.area = 0
         self.own_group = polygon_group
@@ -285,6 +331,14 @@ class Polygon:
         self.cloudiness_distr_table = [[0]]
         self.cloudiness_distr_ranges = [1, 365]
         self.current_cloudiness_in_score = 0
+
+    def to_set_polygons_name(self, polygons_name):
+        """
+        Метод задает название полигона polygons_name.
+        :param polygons_name: Название полигона.
+        :return: поле self.polygons_name приравнивается к значению аргумента polygons_name.
+        """
+        self.polygons_name = polygons_name
 
     def to_split_polygon(self, lat_fineness, long_fineness):
         """
@@ -448,12 +502,8 @@ def to_randomize_cloudiness(time, distribution_of_year_range, borders_of_ranges)
         определены распределения вероятности выпадения некоторого балла облачности
     :return: случайный балл облачности
     """
-    # Определение дня от начала года
-    days_number_in_year = (time - datetime(time.year, 1, 1, 0, 0, 0)).days
-    # Проверка високосен ли год и если да, то прошло ли 29 февраля. Если да, то вычитается один день, чтобы привести
-    #   високосный год к не високосному
-    if (isleap(time.year)) and (days_number_in_year >= NUMBER_OF_29_FEB):
-        days_number_in_year -= 1
+    # Определение дня от начала года в невисокосном году
+    days_number_in_year = DateManagement.to_determine_days_number_in_not_leap_year(time)
     # Проверяется, входит ли заданный день в заданные годовые периоды, для которых заданы распределения облачности.
     #   Если нет, то возвращается 0.
     if (days_number_in_year < distribution_of_year_range[0]) or (days_number_in_year >

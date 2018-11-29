@@ -4,8 +4,8 @@ if __name__ == '__main__':
     earth = pack.Earth(pack.ELLIPSOID_AXISES_WGS_84().a, pack.ELLIPSOID_AXISES_WGS_84().b,
                        pack.ELLIPSOID_AXISES_WGS_84().c)
 
-    utc_time1 = pack.datetime(2019, 6, 7, 0, 0, 0)
-    utc_time2 = pack.datetime(2020, 6, 5, 0, 0, 0)
+    utc_time1 = pack.datetime(2018, 6, 5, 0, 0, 0)
+    utc_time2 = pack.datetime(2028, 6, 5, 0, 0, 0)
     startDay = 121
     endDay = 274
 
@@ -32,22 +32,21 @@ if __name__ == '__main__':
                             [0, 31, 59, 90, 120, 151, 182, 212, 243, 273, 304, 334, 365])
         #i.toPutCloudDistr([0.006535947712418301, 0.17647058823529413, 0.22875816993464052, 0.20261437908496732, 0.1437908496732026, 0.11764705882352941, 0.032679738562091505, 0.058823529411764705, 0.026143790849673203, 0.006535947712418301, 0.0])
 
+    '''
+    startTime = pack.datetime.now()
+    group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
+    group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//lol1//')
+    print(pack.datetime.now() - startTime)
+
+    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 60, 'D://results//lol1//', 75, 3)
+    group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
 
     startTime = pack.datetime.now()
     group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
-    group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//2//')
+    group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//lol2//')
     print(pack.datetime.now() - startTime)
 
-    group.satList[0].predictTrack(utc_time1, utc_time2, 0, 366, 1, None, 75, 'D://results//2019-2020 полный год (для тестирования старой модели)//', 90, 3)
-    group.satList[0].graphs(utc_time1, utc_time2, 0, 366, 24 * 3600)
-
-
-    startTime = pack.datetime.now()
-    group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
-    group.toCreatSatellite('ISS (ZARYA)', 'D://TLE//tle.txt', 3.5, 'D://results//2//')
-    print(pack.datetime.now() - startTime)
-
-    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2019-2020 неполный год (для тестирования старой модели)//', 90, 3)
+    group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 45, 'D://results//lol2//', 75, 3)
     group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
 
 
@@ -61,9 +60,9 @@ if __name__ == '__main__':
 
     #group.satList[0].predictTrack(utc_time1, utc_time2, startDay, endDay, 1, None, 75, 'D://results//2009-2019 неполный год//', 90, 3)
     #group.satList[0].graphs(utc_time1, utc_time2, startDay, endDay, 24 * 3600)
-
-
     '''
+
+
     group = pack.SatelliteGroup(earth, polygons, 'D://results.txt')
 
     file = open('D://TLE//sat25544.txt', 'r')
@@ -80,7 +79,7 @@ if __name__ == '__main__':
     newFile.close()
 
     tle = pack.tlefile.read('ISS (ZARYA)', tleAddress)
-    group.toCreatSatellite('ISS (ZARYA)', tleAddress, 3.5, 'D://results//test//')
+    group.toCreatSatellite('ISS (ZARYA)', tleAddress, 3.5, 'D://results//test3//')
 
     timeStart = pack.datetime(2017, 1, 1, 0, 0, 0)
 
@@ -104,13 +103,11 @@ if __name__ == '__main__':
         mm = int(timeEnd64[14:16])
         ss = int(timeEnd64[17:19])
         timeEnd = pack.datetime(yyyy, MM, dd, hh, mm, ss)
-        group.satList[0].predictTrack(timeStart, timeEnd, 121, 274, 1, None, 75, 'D://results//test//', 90, 3)
+        group.satList[0].predictTrack(timeStart, timeEnd, startDay, endDay, 1, None, 60, 'D://results//test3//', 75, 3)
         group.satList[0].tle = pack.tlefile.read('ISS (ZARYA)', tleAddress)
         timeStart = timeEnd
     file.close()
     timeEnd = pack.datetime(2017, 12, 31, 23, 59, 59)
-    group.satList[0].predictTrack(timeStart, timeEnd, 121, 274, 1, None, 75, 'D://results//test//', 90, 3)
+    group.satList[0].predictTrack(timeStart, timeEnd, startDay, endDay, 1, None, 60, 'D://results//test3//', 75, 3)
     timeStart = pack.datetime(2017, 1, 1, 0, 0, 0)
-    group.satList[0].graphs(timeStart, timeEnd, 121, 274, 24 * 3600)
-    '''
-
+    group.satList[0].graphs(timeStart, timeEnd, startDay, endDay, 24 * 3600)

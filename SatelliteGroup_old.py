@@ -97,7 +97,7 @@ class SatelliteGroup:
                             self.satTracks[i].append(self.SatelliteCoordinates(decCoord, velVect, lastTime, self.earth))
                             for p in self.satTracks[i]:
                                 f.write(str(p.geoCoord.long) + '\t' + str(p.geoCoord.lat) + '\n')
-                            f.close()
+                            #f.close()
                         self.swathCoords(self.satTracks)
                         self.satTracks = []
                         areas = self.toMakeAreasOfVidion()

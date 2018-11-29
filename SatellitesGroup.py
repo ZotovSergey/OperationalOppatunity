@@ -21,14 +21,14 @@ class SatellitesGroup:
             спутниковой группировки. Задается аргументом earth_ellipsoid при инициализации.
         satellites_list - список всех спутников, входящих в моделируемую группу (в виде объектов класса Satellite).
             При инициализации задается пустым списком, заполняется по одному при исполнении метода to_add_satellite.
-        model_time - модельное время моделируемой спутниковой группировки. При инициализации - None. Значение задается
-            методом объекта Task и обновляется при исполнении метода self.to_act.
+        simulation_time - модельное время моделируемой спутниковой группировки. При инициализации - None. Значение
+            задается методом объекта Task и обновляется при исполнении метода self.to_act.
         task - объект Task - задает задачу тематической обработки моделируемой группировке. При инициализации - None.
             Задается из вне методом объекта Task.
 
     @Методы:
-        to_act(self, next_model_time) - моделирует работу спутниковой группировки, то есть всех спутников, входящих в
-            нее, от текущего модельного времени группыдо времени, некоторого заданного времени. Возвращает площадь
+        to_act(self, next_simulation_time) - моделирует работу спутниковой группировки, то есть всех спутников, входящих
+            в нее, от текущего модельного времени группыдо времени, некоторого заданного времени. Возвращает площадь
             просканированных тестовых полигонов за время моделирования в кв. м. и список спутников, которые за время
             моделирования работы группировки производили съемку.
         to_add_satellite(self, sat_name, tle_address, angle_of_view) - создает объект Satellite и добавляет его в список
@@ -37,16 +37,16 @@ class SatellitesGroup:
     def __init__(self, earth_ellipsoid):
         self.earth_ellipsoid = earth_ellipsoid
         self.satellites_list = []
-        self.model_time = None
+        self.simulation_time = None
         self.task = None
 
-    def to_act(self, next_model_time):
+    def to_act(self, next_simulation_time):
         """
         Метод моделирует работу спутниковой группировки, то есть всех спутников, входящих в нее, от текущего модельного
-            времени группы self.model_time до времени, заданного аргументом next_model_time. Возвращает площадь
-            просканированных тестовых полигонов за время моделирования в кв. м. и список спутников, которые за время
-            моделирования работы группировки производили съемку.
-        :param next_model_time: время, до которого проходит моделирование. Следует использовать время не далекое от
+            времени группы self.simulation_time до времени, заданного аргументом next_simulation_time. Возвращает
+            площадь просканированных тестовых полигонов за время моделирования в кв. м. и список спутников, которые за
+            время моделирования работы группировки производили съемку.
+        :param next_simulation_time: время, до которого проходит моделирование. Следует использовать время не далекое от
             модельного, так как спутники моделируемой группировки между двумя координатами, сответствующих начальному и
             конечному времени моделирования, будет двигаться прямолинейно.
         :return: площадь просканированных тестовых полигонов за время моделирования (кв. м) всеми спутниками, входящих в
@@ -58,14 +58,14 @@ class SatellitesGroup:
         # Обход всех спутников группировки
         for satellite in self.satellites_list:
             # Моделирование работы спутников
-            scanned_area = satellite.to_act(next_model_time)
+            scanned_area = satellite.to_act(next_simulation_time)
             # Если площадь, просканированая спутником, больше нуля, то съемка производилась за время моделирования
             #   работы спутника этим спутником
             if scanned_area > 0:
                 full_scanned_area += scanned_area
                 scanning_satellites.append(satellite)
         # Обновление модельного времени
-        self.model_time = next_model_time
+        self.simulation_time = next_simulation_time
         return full_scanned_area, scanning_satellites
 
     def to_add_satellite(self, sat_name, tle_address, angle_of_view):
@@ -77,7 +77,7 @@ class SatellitesGroup:
         :param sat_name: название спутника в системе NORAD.
         :param tle_address: адресс данных TLE (допускается None).
         :param angle_of_view: угол обзора бортового гиперспектрометра создаваемого спутника.
-        :return:
+        :return: добавляет спутник в список спутников группы self.satellites_list
         """
         self.satellites_list.append(Satellite(sat_name, tle_address, angle_of_view, self))
 
@@ -118,8 +118,8 @@ class Satellite:
             список, заполняется при использовании метода to_determine_close_polygon
 
     @Методы:
-        to_act(self, next_model_time) - моделирует работу спутника от текущего модельного времени спутниковой группы до
-            времени, заданного аргументом. Возвращает площадь просканированных тестовых полигонов за время
+        to_act(self, next_simulation_time) - моделирует работу спутника от текущего модельного времени спутниковой
+            группы до времени, заданного аргументом. Возвращает площадь просканированных тестовых полигонов за время
             моделирования.
         to_move_to_time(self, next_time) - определяет координаты спутника в заданное время и присваивает их значения
             моделируемому спутнику.
@@ -153,13 +153,13 @@ class Satellite:
         self.scanned_territory_for_last_step = None
         self.close_polygons = []
 
-    def to_act(self, next_model_time):
+    def to_act(self, next_simulation_time):
         """
-        Метод моделирует работу спутника от текущего модельного времени группы (self.satellite_group.model_time) до
-            времени, заданного аргументом next_model_time. В процесс моделирования входит моделиросвание движения
+        Метод моделирует работу спутника от текущего модельного времени группы (self.satellite_group.simulation_time) до
+            времени, заданного аргументом next_simulation_time. В процесс моделирования входит моделиросвание движения
                 моделируемого спутника, его полосы захвата, процесса съемки. Возвращает площадь просканированных
                 тестовых полигонов за время моделирования в кв. м.
-        :param next_model_time: время, до которого проходит моделирование. Следует использовать время не далекое от
+        :param next_simulation_time: время, до которого проходит моделирование. Следует использовать время не далекое от
             модельного, так как спутник между двумя координатами, сответствующих начальному и конечному времени
             моделирования, будет двигаться прямолинейно.
         :return: площадь просканированных тестовых полигонов за время моделирования (кв. м).
@@ -167,7 +167,7 @@ class Satellite:
         # Сохранение координат моделируемого спутника в начальное время моделирования
         current_coordinates_set = self.satellite_coordinates_set
         # Моделирование движения спутника
-        self.to_move_to_time(next_model_time)
+        self.to_move_to_time(next_simulation_time)
         # Моделироване полосы захвата (по прямой линии между точками на орбите)
         self.to_determine_scan_area(current_coordinates_set, self.satellite_coordinates_set)
         # Определение полигонов достаточно близких моделируемому спутнику, чтобы быть просканированными
@@ -189,7 +189,7 @@ class Satellite:
         (pos_x, pos_y, pos_z), (vel_x, vel_y, vel_z) = self.orbit.get_position(next_time, normalize=False)
         self.satellite_coordinates_set = SatelliteCoordinateSet(Coordinates.CartesianCoordinates(pos_x, pos_y, pos_z),
                                                                 AnalyticGeometry.Vector(vel_x, vel_y, vel_z),
-                                                                self.satellites_group.model_time,
+                                                                self.satellites_group.simulation_time,
                                                                 self.satellites_group.earth_ellipsoid)
 
     def to_determine_scan_area(self, previous_coordinate, current_coordinate):
@@ -262,7 +262,7 @@ class Satellite:
         geo_coordinates_of_search_point = Coordinates.CartesianCoordinates(search_point.x,
                                                                            search_point.y,
                                                                            search_point.z).\
-            to_geo_coordinates(self.satellites_group.model_time, self.satellites_group.earth_ellipsoid)
+            to_geo_coordinates(self.satellites_group.simulation_time, self.satellites_group.earth_ellipsoid)
         return geometry.Point(geo_coordinates_of_search_point.long, geo_coordinates_of_search_point.lat)
 
     def to_determine_close_polygons(self):
@@ -291,7 +291,7 @@ class Satellite:
         Метод моделирует процесс съемки близких тестовых полигонов (записанных в self.close_polygons) за некоторое
             время. Производится проверка того, попадают ли сегменты близких полигонов (объекты из списка segments_list
             объекта Polygon) в полосу захвата за некоторое время self.scanned_territory_for_last_step, допустимый ли в
-            момент съемки self.satellites_group.model_time зенитный угол Солнца (меньше
+            момент съемки self.satellites_group.simulation_time зенитный угол Солнца (меньше
             self.satellites_group.task.max_zenith_angle), моделирует облачность или для всех полигонов, или для каждого
             отдельно, задает случайную облачность для каждого сегмента и проверяет, допустима ли облачность над
             полигоном для съемки (меньше self.satellites_group.task.max_cloud_score) и не закрыт ли сегмент облаками.
@@ -302,12 +302,12 @@ class Satellite:
         # Вычисление случайной облачности либо для всех близких полинов сразу, либо отдельно
         if self.satellites_group.task.common_cloudiness_boolean:
             common_cloudiness = self.close_polygons[0].own_group.to_randomize_common_cloudiness(
-                self.satellites_group.model_time)
+                self.satellites_group.simulation_time)
             for polygon in self.close_polygons:
                 polygon.current_cloudiness_in_score = common_cloudiness
         else:
             for polygon in self.close_polygons:
-                polygon.to_randomize_cloudiness_to_polygon(self.satellites_group.model_time)
+                polygon.to_randomize_cloudiness_to_polygon(self.satellites_group.simulation_time)
 
         scanned_area = 0
         # Обход всех близких полигонов
@@ -318,7 +318,7 @@ class Satellite:
                 for segment in polygon.segments_list:
                     # Проверка всех условий для съемки
                     if (self.scanned_territory_for_last_step.contains(segment.center_geo_coordinates.point)) and\
-                            (astronomy.sun_zenith_angle(self.satellites_group.model_time,
+                            (astronomy.sun_zenith_angle(self.satellites_group.simulation_time,
                                                         self.satellite_coordinates_set.geo_coordinates.long,
                                                         self.satellite_coordinates_set.geo_coordinates.lat)
                              <= self.satellites_group.task.max_zenith_angle) and (polygon.segment_is_hidden()):
@@ -378,6 +378,6 @@ class SatelliteCoordinateSet:
 
     def __str__(self):
         """
-        :return: ** с. ш.(ю. ш.)   ** з. д.(в. д.)  **** м  **** м/с    ?(utc_time)?
+        :return: ** с. ш.(ю. ш.)   ** з. д.(в. д.)  **** м  **** м/с
         """
-        return str(self.geo_coordinates) + '\t' + str(len(self.velocity_vector)) + ' м/с\t' + str(self.utc_time)
+        return str(self.geo_coordinates) + '\t' + str(len(self.velocity_vector)) + ' м/с'
