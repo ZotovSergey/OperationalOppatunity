@@ -33,13 +33,17 @@ class PolygonsGroup:
             При инициализации - 0. Вычисляется при применении метода self.to_split_all_polygons
         common_cloudiness_distr_table - двумерный список, содержащий распределения вероятности появления облачности
             некоторого балла в районе, где находится моделируемая группа полигонов для годовых периодов, границы которых
-            записываются в self.common_cloudiness_distr_ranges. При инициалиации присваивается [[0]]. Обновляется
-            методом self.to_randomize_common_cloudiness.
+            записываются в self.common_cloudiness_distr_ranges. При инициалиации присваивается [[1, 0]] - означает, что
+            стопроцентно облачность нулевая. Обновляется методом self.to_randomize_common_cloudiness.
         common_cloudiness_distr_ranges - границы годовых периодов, для которых записаны в
             self.common_cloudiness_distr_table (дни от начала не високосного года). При инициалиации присваивается
-            [1, 365]. Обновляется методом self.to_randomize_common_cloudiness.
+            [1, 365] - означает, что период только один и он охватывает весь год. Обновляется методом
+            self.to_randomize_common_cloudiness.
         common_current_cloudiness_in_score - балл облачности над моделируемой группой полигонов. При инициалиации
             присваивается 0. Обновляется методом to_randomize_common_cloudiness объекта класса PolygonGroup.
+        common_calculations_of_cloudiness - если True, вычислять облачность над всей группой полигонов вместе, если
+            False, то отдельно для каждого полигона в группе (boolean). По умолчанию True.
+
     @Методы:
         to_read_shape_file(self, shape_file_address) – читает из shape-файла информацию о тестовых полигонах, полигоны
             добавляются в список self.polygons_list.
@@ -58,20 +62,26 @@ class PolygonsGroup:
             добавляет распределения вероятности появления облачности некоторого балла для каждого полигона в
             моделируемой группе для годовых периодов, границы которых также записываются.
         to_normalize_distribution(distribution) - нормируетраспределение на единицу distribution.
-        to_randomize_common_cloudiness(self, time) - случайно определяет текущий балл облачности для всей моделируемой
+        to_calculate_cloudiness_above_group(self, time) - определяет текущий балл облачности для всей моделируемой
             группы полигонов в соответвии с распределением из self.common_cloudiness_distr_table для времени из
             аргумента time.
     """
+    # Константа, показвавющая максимальное время, когда облачность может не меняться (секунды)
+    TIME_OF_CLOUDINESS_CHANGING = 3600
+
     def __init__(self, earth_ellipsoid):
         self.earth_ellipsoid = earth_ellipsoid
         self.polygons_list = []
         self.full_segments_list = []
         self.full_area = 0
-        self.common_cloudiness_distr_table = [[0]]
+        # По умолчанию стопроцентно облачность нулевая
+        self.common_cloudiness_distr_table = [[1, 0]]
+        # По умолчанию период только один и он охватывает весь год
         self.common_cloudiness_distr_ranges = [1, 365]
         self.common_current_cloudiness_in_score = 0
+        self.common_calculations_of_cloudiness = True
 
-    def to_read_shape_file(self, shape_file_address):
+    def to_read_shape_file(self, shape_file_address, polygons_names=None):
         """
         @Описание:
             Открывает для чтения shape-файл, в цикле обходится все геометрические объекты типа “Polygon” (в терминах из
@@ -80,8 +90,12 @@ class PolygonsGroup:
                 self.earth_ellipsoid - объект EarthEllipsoid, задающий параметры эллипсоида Земли, на котором находится
                 полигон, и добавляется в self.polygonsList, задает стандартные имена.
         :param shape_file_address: адресс shape-файла, из которого читается информация о тестовых полигонах.
+        :param polygons_names: список названий полигонов. Допустим неполный или пустой список, так как для оставшихся
+            полигонов, которым не достается названия они прописываются автоматически. Допустимо None - заменяется на
+            пустой список. По умолчанию None.
         """
-
+        if polygons_names is None:
+            polygons_names = []
         # Чтение информации о полигонах из файла по адресу shape_file_address
         shape_file = Reader(shape_file_address)
         shape_file_list = list(shape_file.iterShapes())
@@ -89,9 +103,9 @@ class PolygonsGroup:
         # EarthEllipsoid, задающий параметры эллипсоида Земли, на котором находится создаваемый полигон shape_file_list
         # и запись в self.polygons_list в цикле
         for shape in shape_file_list:
-            self.polygons_list.append(Polygon(shape, self.earth_ellipsoid))
+            self.polygons_list.append(Polygon(shape, self))
         # Задание полигонам стандартных названий: "Полигон 1", "Полигон 2", "Полигон 3" ...
-        self.to_set_polygons_names([])
+        self.to_set_polygons_names(polygons_names)
 
     def to_set_polygons_names(self, polygons_names):
         """
@@ -151,7 +165,7 @@ class PolygonsGroup:
         segments_list = self.full_segments_list
         percentages_of_grabbed_areas_list = []
         i = 1
-        # Цикл продолжает работу пока из списка segments_list не дудут исключены все сегменты
+        # Цикл продолжает работу пока из списка segments_list не будут исключены все сегменты
         while len(segments_list) > 0:
             new_list_of_grabbed_segments = []
             current_area = 0
@@ -162,12 +176,12 @@ class PolygonsGroup:
                 if segment.count_of_grabs >= i:
                     if segment.count_of_grabs > i:
                         new_list_of_grabbed_segments.append(segment)
-                    current_area += segment.space
+                    current_area += segment.segments_area
             # Вычисляется в м^2
             percentages_of_grabbed_areas_list.append(current_area)
             if result_in_percents:
                 # м^2 переводится в проценты
-                percentages_of_grabbed_areas_list[-1] /= self.full_area * 100
+                percentages_of_grabbed_areas_list[-1] /= self.full_area / 100
             segments_list = new_list_of_grabbed_segments
             i += 1
         return percentages_of_grabbed_areas_list
@@ -195,9 +209,14 @@ class PolygonsGroup:
             появления облачности некоторого балла в районе, где находится моделируемая группа полигонов (дни от начала
             не високосного года)
         """
+        self.common_calculations_of_cloudiness = True
         self.common_cloudiness_distr_ranges = common_cloudiness_distr_ranges
         # Распределения вероятностей нормируются на единицу
         self.common_cloudiness_distr_table = self.to_normalize_distribution(common_cloudiness_distr_table)
+        # Присвоение этого распределения каждому полигону группировки
+        for i in range(0, len(self.polygons_list)):
+            self.polygons_list[i].cloudiness_distr_ranges = self.common_cloudiness_distr_ranges
+            self.polygons_list[i].cloudiness_distr_table = self.common_cloudiness_distr_table
 
     def to_add_cloudiness_distr_to_each_polygon(self, cloudiness_distr_tables_list, cloudiness_distr_ranges_list):
         """
@@ -211,10 +230,11 @@ class PolygonsGroup:
             появления облачности некоторого балла в районе, где находится моделируемая группа полигонов (дни от начала
             не високосного года)
         """
+        self.common_calculations_of_cloudiness = False
         for i in range(0, len(self.polygons_list)):
             self.polygons_list[i].cloudiness_distr_ranges = cloudiness_distr_ranges_list[i]
             # Распределения вероятностей нормируются на единицу
-            self.polygons_list[i].cloudiness_distr_table =\
+            self.polygons_list[i].cloudiness_distr_table = \
                 self.to_normalize_distribution(cloudiness_distr_tables_list[i])
 
     @staticmethod
@@ -233,15 +253,66 @@ class PolygonsGroup:
                 element /= elements_sum
         return distribution
 
-    def to_randomize_common_cloudiness(self, time):
+    def to_calculate_cloudiness_above_group(self, time):
         """
         @Описание:
-            Метод случайно определяет текущий балл облачности для всей моделируемой группы полигонов в соответвии с
-                распределением из self.common_cloudiness_distr_table для времени из аргумента time
+            Метод определяет текущий балл облачности для всей моделируемой группы полигонов в соответвии с
+            распределением из self.common_cloudiness_distr_table для времени из аргумента time
         :param time: объект datetime - время в формате UTC
+        :return: определяет облачность для всей группы полигонов
         """
+        if self.common_calculations_of_cloudiness:
+            common_cloudiness = to_randomize_cloudiness(time, self.common_cloudiness_distr_table,
+                                                        self.common_cloudiness_distr_ranges)
+            for polygon in self.polygons_list:
+                polygon.current_cloudiness_in_score = common_cloudiness
+        else:
+            for polygon in self.polygons_list:
+                polygon.to_randomize_cloudiness_to_polygon(time)
+
         self.common_current_cloudiness_in_score = to_randomize_cloudiness(time, self.common_cloudiness_distr_table,
                                                                           self.common_cloudiness_distr_ranges)
+        # Присвоение балла для каждого полигона
+        for polygon in self.polygons_list:
+            polygon.current_cloudiness_in_score = self.common_current_cloudiness_in_score
+
+    def to_str(self, count_of_numerals_after_point_for_centers=3,
+               count_of_numerals_after_point_for_area=3,
+               count_of_numerals_after_point_for_area_in_percents=3):
+        """
+        @Описание:
+            выводит список полигонов в группе с их названиями, географическими координатами центров, площадью в кв.
+                метрах и площадью в процентах площади от всей площади всей группы. В конце выводится общая площадь
+                группы. Все выводится в виде строки.
+        :param count_of_numerals_after_point_for_centers: количество знаков после точки при выводе географических
+            координат центров плигонов (в градусах). По умолчанию 3.
+        :param count_of_numerals_after_point_for_area: количество знаков после точки при выводе площади полигонов (в
+            квадратных метрах). По умолчанию 3.
+        :param count_of_numerals_after_point_for_area_in_percents: количество знаков после точки при выводе процента
+            площади полигонов от площади всей группы. По умолчанию 3.
+        :return: строка в виде:
+            "Название первого полигона":	    коорд. центра:	***.*** с. ш.	***.*** в. д.	0 м,	площадь:	\
+                ***.*** м^2,    от общей площади:	***.***%
+            "Название второго полигона":	    коорд. центра:	***.*** с. ш.	***.*** в. д.	0 м,	площадь:	\
+                ***.*** м^2,    от общей площади:	***.***%
+            "Название третьего полигона":	    коорд. центра:	***.*** с. ш.	***.*** в. д.	0 м,	площадь:	\
+                ***.*** м^2,    от общей площади:	***.***%
+            ...
+            Общая площадь всех полигонов:	******.*** м^2
+        """
+        str_satellite_group = []
+        for polygon in self.polygons_list:
+
+            str_satellite_group.append("".join([polygon.to_str(count_of_numerals_after_point_for_centers,
+                                                               count_of_numerals_after_point_for_area), ','
+                                                '\tот общей площади:\t',
+                                                str(round(100 * polygon.area / self.full_area,
+                                                          count_of_numerals_after_point_for_area_in_percents)),
+                                                '%\n']))
+        str_satellite_group.append('Общая площадь всех полигонов:\t')
+        str_satellite_group.append("".join([str(round(self.full_area, count_of_numerals_after_point_for_area)),
+                                            ' м^2']))
+        return "".join(str_satellite_group)
 
 
 class Polygon:
@@ -322,13 +393,13 @@ class Polygon:
         border_points = shape.points
         max_distance = 0
         for point in border_points:
-            geo_coordinates_of_point = Coordinates.GeoCoordinates(point.x, point.y, 0)
-            distance_to_point = self.own_group.earth_ellipsoid.dist_between_geo_coordinates(self.center,
+            geo_coordinates_of_point = Coordinates.GeoCoordinates(point[0], point[1], 0)
+            distance_to_point = self.own_group.earth_ellipsoid.dist_between_geo_coordinates(self.center.geo_coordinates,
                                                                                             geo_coordinates_of_point)
             if distance_to_point > max_distance:
                 max_distance = distance_to_point
         self.radius = max_distance
-        self.cloudiness_distr_table = [[0]]
+        self.cloudiness_distr_table = [[1, 0]]
         self.cloudiness_distr_ranges = [1, 365]
         self.current_cloudiness_in_score = 0
 
@@ -349,16 +420,17 @@ class Polygon:
         :param long_fineness: мелкость разбиения сегментов по долготе (км)
         """
         self.area = 0
-        # Координаты центрального сегмента будет совпадать с центром полигона
+        # Координаты центрального сегмента будут совпадать с центром полигона
         coordinates_of_central_segment = Coordinates.GeoCoordinates(self.center.geo_coordinates.long,
                                                                     self.center.geo_coordinates.lat, 0)
         # Определение координат центров сегментов в виде сетки -двумерного списка
-        lat_of_segments = concatenate([arange(coordinates_of_central_segment.lat - lat_fineness, self.bot_lat_border,
-                                              -lat_fineness), arange(coordinates_of_central_segment.lat,
-                                                                     self.top_lat_border, lat_fineness)])
+        lat_of_segments = concatenate([arange(coordinates_of_central_segment.lat - lat_fineness,
+                                              self.bot_lat_border, -lat_fineness),
+                                       arange(coordinates_of_central_segment.lat,
+                                              self.top_lat_border, lat_fineness)])
         long_of_segments = concatenate([arange(coordinates_of_central_segment.long - long_fineness,
-                                               self.right_long_border, -long_fineness),
-                                        arange(coordinates_of_central_segment.long, self.left_long_border,
+                                               self.left_long_border, -long_fineness),
+                                        arange(coordinates_of_central_segment.long, self.right_long_border,
                                                long_fineness)])
         # Определение широт границ сегментов с юга на север
         lat_of_grids_nodes = arange(self.bot_lat_border - lat_fineness, self.top_lat_border + lat_fineness,
@@ -417,14 +489,14 @@ class Polygon:
         :return: площадь поверхности на эллипсоиде Земли self.own_group.earth_ellipsoid от экватора эллипсоида до
             заданной широты lat (кв. км)
         """
-        semi_major_axle = self.own_group.earth_ellipsoid.semi_major_axle
-        semi_minor_axle = self.own_group.earth_ellipsoid.semi_minor_axle
-        y = semi_minor_axle * math.sin(lat * math.pi / 180)
-        a = semi_major_axle * semi_major_axle - semi_minor_axle * semi_minor_axle
+        semi_major_axis = self.own_group.earth_ellipsoid.semi_major_axis
+        semi_minor_axis = self.own_group.earth_ellipsoid.semi_minor_axis
+        y = semi_minor_axis * math.sin(lat * math.pi / 180)
+        a = semi_major_axis * semi_major_axis - semi_minor_axis * semi_minor_axis
         b = a ** 0.5
-        c = semi_minor_axle ** 4
+        c = semi_minor_axis ** 4
         d = (c + y * y * a) ** 0.5
-        return 2 * math.pi / semi_minor_axle * d * ((c * math.log(b * d + y * a)) / (b * d) + y)
+        return 2 * math.pi / semi_minor_axis * d * ((c * math.log(b * d + y * a)) / (b * d) + y)
 
     def segment_is_hidden(self):
         """
@@ -451,6 +523,20 @@ class Polygon:
         """
         self.current_cloudiness_in_score = to_randomize_cloudiness(time, self.cloudiness_distr_table,
                                                                    self.cloudiness_distr_ranges)
+
+    def to_str(self, count_of_numerals_after_point_for_centers=3, count_of_numerals_after_point_for_area=3):
+        """
+        @Описание:
+            Вывод данных о полигоне - названия, географических координат центра полигона (градусы) и его площади (в
+                квадратных метрах) в виде строки.
+        :param count_of_numerals_after_point_for_centers:
+        :param count_of_numerals_after_point_for_area:
+        :return: название полигона, географические координаты его центра и его площадь в кв. метрах в виде:
+            "Название полигона":	    коорд. центра:	***.*** с. ш.	***.*** в. д.	0 м,	площадь:	***.*** м^2
+        """
+        return "".join([str(self.polygons_name), ':\t\tкоорд. центра:\t',
+                        self.center.geo_coordinates.to_str(count_of_numerals_after_point_for_centers, 0),
+                        ',\tплощадь:\t', str(round(self.area, count_of_numerals_after_point_for_area)), ' м^2'])
 
 
 class Segment:
@@ -490,13 +576,13 @@ class Segment:
         self.count_of_grabs += 1
 
 
-def to_randomize_cloudiness(time, distribution_of_year_range, borders_of_ranges):
+def to_randomize_cloudiness(time, distribution_of_year_ranges, borders_of_ranges):
     """
     @Описание:
         Метод случайно определяет балл облачности в соответвии с распределением из distribution_of_year_range для
             времени из аргумента time
     :param time: объект datetime - время в формате UTC
-    :param distribution_of_year_range: двумерный массив, содержащий распределения вероятности выпадения некоторого
+    :param distribution_of_year_ranges: двумерный массив, содержащий распределения вероятности выпадения некоторого
         балла облачности для годовых периодов, границы которых записаны в аргументе borders_of_ranges
     :param borders_of_ranges: границы годовых периодов, для которых в аргументе distribution_of_year_range
         определены распределения вероятности выпадения некоторого балла облачности
@@ -506,14 +592,13 @@ def to_randomize_cloudiness(time, distribution_of_year_range, borders_of_ranges)
     days_number_in_year = DateManagement.to_determine_days_number_in_not_leap_year(time)
     # Проверяется, входит ли заданный день в заданные годовые периоды, для которых заданы распределения облачности.
     #   Если нет, то возвращается 0.
-    if (days_number_in_year < distribution_of_year_range[0]) or (days_number_in_year >
-                                                                 distribution_of_year_range[-1]):
+    if (days_number_in_year < borders_of_ranges[0]) or (days_number_in_year > borders_of_ranges[-1]):
         return 0
     # Определяется, в какой период входит время time
     i = 0
     while days_number_in_year <= borders_of_ranges[i]:
         i += 1
-    distribution = distribution_of_year_range[i]
+    distribution = distribution_of_year_ranges[i]
     # Вычисление случайного балла облачности в соответствии с распределением для определенного выше годового периода
     rand = random()
     j = 0

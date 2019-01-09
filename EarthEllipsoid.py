@@ -1,5 +1,4 @@
 import math
-# import Coordinates
 
 
 class EarthEllipsoid:
@@ -36,7 +35,7 @@ class EarthEllipsoid:
     SEMI_MAJOR_AXIS_WGS_84 = 6378.137
     F_WGS_84 = 1 / 298.257223563
 
-    def __init__(self, semi_major_axis, f):
+    def __init__(self, semi_major_axis=None, f=None):
         # Производится проверка, заданы ли аргументы
         if (semi_major_axis is None) or (f is None):
             # Если аргументы не заданны, то объект будет моделировать модель земного эллипсоида WGS-84
@@ -46,7 +45,7 @@ class EarthEllipsoid:
             self.semi_major_axis = semi_major_axis
             self.f = f
         # Вычисление малой полуоси модели эллипсоида Земли
-        self.semi_minor_axle = self.semi_major_axis * (1 - self.f)
+        self.semi_minor_axis = self.semi_major_axis * (1 - self.f)
 
     def dist_between_geo_coordinates(self, geo_coordinate_1, geo_coordinate_2):
         """
@@ -80,3 +79,17 @@ class EarthEllipsoid:
             delta_small_angle += math.pi
 
         return delta_small_angle * self.semi_major_axis
+
+    def to_str(self, count_of_numerals_after_point_in_semi_major_axis=3, count_of_numerals_after_point_in_f=8):
+        """
+        @Описание:
+            Вывод данных о эллипсоиде Земли - длину большой полуоси (км) и сжатие
+        :param count_of_numerals_after_point_in_semi_major_axis: количество знаков после точки при выводе длины большой
+            полуоси (в километрах). По умолчанию 3.
+        :param count_of_numerals_after_point_in_f: количество знаков после точки при выводе сжатия. По умолчанию 8.
+        :return:
+        """
+        return "".join(["Большая полуось:\t",
+                        str(round(self.semi_major_axis, count_of_numerals_after_point_in_semi_major_axis)),
+                        " км\nСжатие:\t\t\t\t",
+                        str(round(self.f, count_of_numerals_after_point_in_f))])

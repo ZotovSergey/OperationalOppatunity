@@ -34,6 +34,13 @@ class Task:
             (int, double). Задается методом to_set_max_zenith_angle. По умолчанию DEFAULT_MAX_ZENITH_ANGLE.
         max_cloud_score - максимально допустимое количество облаков при котором производится космическая съемка (int).
             Задается методом to_set_max_cloud_score. По умолчанию DEFAULT_MAX_CLOUD_SCORE.
+        common_cloudiness_is_calculated - логическая величина. Если True, то значение облачности вычисляется для всех
+            полигонов одновременно по распределению self.polygon_list.common_cloudiness_distr_table, а если False, то
+            вычисляется для каждого полигона отдельно, в соответствии с собственным распределением (boolean). По
+            умолчанию True. Задается методом self.common_cloudiness_is_calculated.
+        to_consider_partial_cloudiness - вычислять статистически частичную облачность, если значение True и не
+            вычислять, если False (boolean). Определяется с помощью метода
+            self.to_set_considering_considering_partial_cloudiness. По умолчанию False.
         initial_annual_observation_period - номер первого дня в невисокосном году годового периода наблюдений (времени в
             году, когда допустима съемка) (int). Задается методом to_set_annual_observations_period. По умолчанию
             DEFAULT_INITIAL_ANNUAL_OBSERVATION_PERIOD.
@@ -74,14 +81,14 @@ class Task:
                 среднее, медианное, максимальное, минимальное значениее времени выполнения задачи, дисперсию и
                 среднеквадратическое отклонение (далее основные оказатели) и выводит в виде докумена txt;
                 гистограмму распределения времении выполнения задачи и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, jpg;
+                    графичечском виде в документе pdf, png;
                 основные показатели периодичности пролётов спутников над полигонами и выводит в виде докумена txt;
                 гистограмму распределения периода пролётов спутников над полигонами и выводит в текстовом виде в
-                    документе txt, в графичечском видиде в документе pdf, jpg;
+                    документе txt, в графичечском видиде в документе pdf, png;
                 график прироста просканированной территории (в м^2 или в %) за выбранный период времени и выводит в
-                    текстовом виде в документе txt, в графичечском виде в документе pdf, jpg;
+                    текстовом виде в документе txt, в графичечском виде в документе pdf, png;
                 график просканированной территории (в м^2 или в %)  и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, jpg.
+                    графичечском виде в документе pdf, png.
         to_set_name - задает название задачи. Записывает его в поле self.name.
         to_set_satellites_group - задаёт спутниковую группировку, которая будет выполнять задачу, в виде объекта
             SatelliteGroup. Записывает его в поле self.satelliteGroup.
@@ -131,6 +138,7 @@ class Task:
         self.polygons_group = None
         self.max_zenith_angle = DEFAULT_MAX_ZENITH_ANGLE
         self.max_cloud_score = DEFAULT_MAX_CLOUD_SCORE
+        self.to_consider_partial_cloudiness = False
         self.initial_annual_observation_period = DEFAULT_INITIAL_ANNUAL_OBSERVATION_PERIOD
         self.final_annual_observation_period = DEFAULT_FINAL_ANNUAL_OBSERVATION_PERIOD
         self.observation_period_inside_one_year = True
@@ -144,8 +152,11 @@ class Task:
 
     def to_solve_task(self, unit_report_time=None,
                       report_address=None,
-                      report_time_from_initial_time_in_days=True,
+                      report_time_from_initial_time=True,
                       report_data_about_satellites=True,
+                      count_of_numerals_after_point_in_geo_coordinates=3,
+                      count_of_numerals_after_point_in_altitude=1,
+                      count_of_numerals_after_point_in_velocity=2,
                       report_main_data_about_solutions=True,
                       report_main_data_about_overflights=True,
                       time_unit_of_report='days',
@@ -166,10 +177,16 @@ class Task:
             None.
         :param report_address: адрес документа txt, в который будут записываться все отчеты (String). Допустимо None.
             Если None, то отчеты не записываются в файл. По умолчанию None.
-        :param report_time_from_initial_time_in_days: писать в отчетах модельное время от начала моделирования в днях
-            (если True, если False, то не писать)(boolean). По умолчанию True.
+        :param report_time_from_initial_time: писать в отчетах модельное время от начала моделирования в единицах
+            измерения времени, unit_report_time (если True, если False, то не писать)(boolean). По умолчанию True.
         :param report_data_about_satellites: писать в отчетах данные о состоянии спутников (географическое координаты,
             высота, скорость), входящих в систему self.SatelliteGroup (если True, если False, то не писать)(boolean).
+        :param count_of_numerals_after_point_in_geo_coordinates: количество знаков после точки при выводе географических
+            координат (в градусах) спутников отчете о состоянии. По умолчанию 3.
+        :param count_of_numerals_after_point_in_altitude: количество знаков после точки при выводе высоты (в метрах) над
+            поверхностью Земли спутников в отчете о состоянии. По умолчанию 1.
+        :param count_of_numerals_after_point_in_velocity: количество знаков после точки при выводе скорости (в метрах в
+            секунду) спутников отчете о состоянии. По умолчанию 2.
         :param report_main_data_about_solutions: писать в отчетах данные о времени решения (среднее, медианное,
             максимальное, минимальное время, дисперсия, среднеквадратическое отклонение) на текущий момент модельного
             времени (если True, если False, то не писать)(boolean). По умолчанию True.
@@ -206,6 +223,9 @@ class Task:
             self.time_of_solutions - время, когда была решена поставленная задача с точность self.step (datetime).
             Также в консоль и в файл report_address выводятся отчеты (вид отчета см. описание метода to_make_report).
         """
+        # Задание в качестве модельного времени для спутниковой группировки self.SatelliteGroup начального модельного
+        #   времени и вычисление координатспутников группировки в это время
+        self.satellites_group.to_set_simulation_time(self.initial_simulation_time)
         # Создание файла, в который будут записываться отчеты, если адрес задан
         if report_address is not None:
             report_file = open(report_address, 'w')
@@ -216,8 +236,12 @@ class Task:
             report_time_sec = to_get_unit_in_seconds(unit_report_time)
             # Отправка первого отчета в начальное модельное время
             self.to_output_report(report_file,
-                                  report_time_from_initial_time_in_days,
+                                  report_time_from_initial_time,
+                                  unit_report_time,
                                   report_data_about_satellites,
+                                  count_of_numerals_after_point_in_geo_coordinates,
+                                  count_of_numerals_after_point_in_altitude,
+                                  count_of_numerals_after_point_in_velocity,
                                   report_main_data_about_solutions,
                                   report_main_data_about_overflights,
                                   time_unit_of_report,
@@ -231,9 +255,6 @@ class Task:
             report_time_sec = math.inf
         # Время от последнего отчета в секундах
         time_from_report_last = 0
-        # Задание в качестве модельного времени для спутниковой группировки self.SatelliteGroup начального модельного
-        #   времени
-        self.satellites_group.simulation_time = self.initial_simulation_time
         # В цикле проверяется, не вышло ли модельное время спутниковой группировки self.SatelliteGroup за пределы
         #   времени моделирования
         while self.satellites_group.simulation_time < self.final_simulation_time:
@@ -252,6 +273,8 @@ class Task:
                 #       площадь (кв. м) просканированной площади self.PolygonsGroup, меняется текущее модельное время на
                 #       next_simulation_time
                 scanned_area = self.satellites_group.to_act(next_simulation_time)
+                #   Изменение времени от последнего отчета
+                time_from_report_last += self.step
                 #   Если просканированная площадь не нулевая...
                 if scanned_area > 0:
                     # То записываются в спискок площадей просконированной территории и список времени сканирования
@@ -260,7 +283,9 @@ class Task:
                     self.time_of_growth_of_information.append(self.satellites_group.simulation_time)
                     percentages_of_grabbed_areas_list = self.polygons_group.to_calc_percentages_of_grabbed_areas()
                     #  Проверка, выполнена ли задача
-                    if percentages_of_grabbed_areas_list[len(self.time_of_solutions) + 1] >= self.min_percent_for_solve:
+                    if len(self.time_of_solutions) < len(percentages_of_grabbed_areas_list) and \
+                            percentages_of_grabbed_areas_list[len(self.time_of_solutions)] >= \
+                            self.min_percent_for_solve:
                         # Если выполнена, то текущее модельное время - время выполнения записывается в список времени
                         #   решений self.time_of_solutions
                         self.time_of_solutions.append(self.satellites_group.simulation_time)
@@ -268,8 +293,12 @@ class Task:
                 if time_from_report_last >= report_time_sec:
                     # Если да, то подается новый отчет
                     self.to_output_report(report_file,
-                                          report_time_from_initial_time_in_days,
+                                          report_time_from_initial_time,
+                                          unit_report_time,
                                           report_data_about_satellites,
+                                          count_of_numerals_after_point_in_geo_coordinates,
+                                          count_of_numerals_after_point_in_altitude,
+                                          count_of_numerals_after_point_in_velocity,
                                           report_main_data_about_solutions,
                                           report_main_data_about_overflights,
                                           time_unit_of_report,
@@ -300,8 +329,12 @@ class Task:
                     time_from_report_last += (new_simulation_time - self.satellites_group.simulation_time).seconds
                     if time_from_report_last >= report_time_sec:
                         self.to_output_report(report_file,
-                                              report_time_from_initial_time_in_days,
+                                              report_time_from_initial_time,
+                                              unit_report_time,
                                               report_data_about_satellites,
+                                              count_of_numerals_after_point_in_geo_coordinates,
+                                              count_of_numerals_after_point_in_altitude,
+                                              count_of_numerals_after_point_in_velocity,
                                               report_main_data_about_solutions,
                                               report_main_data_about_overflights,
                                               time_unit_of_report,
@@ -322,16 +355,16 @@ class Task:
                        to_get_main_data_about_overflights=False,
                        to_get_graph_information_collection_rate_txt=False,
                        to_get_graph_information_collection_rate_pdf=False,
-                       to_get_graph_information_collection_rate_jpg=False,
+                       to_get_graph_information_collection_rate_png=False,
                        to_get_graph_information_volume_txt=False,
                        to_get_graph_information_volume_pdf=False,
-                       to_get_graph_information_volume_jpg=False,
+                       to_get_graph_information_volume_png=False,
                        to_get_histogram_of_solving_period_txt=False,
                        to_get_histogram_of_solving_period_pdf=False,
-                       to_get_histogram_of_solving_period_jpg=False,
+                       to_get_histogram_of_solving_period_png=False,
                        to_get_histogram_of_overflight_period_txt=False,
                        to_get_histogram_of_overflight_period_pdf=False,
-                       to_get_histogram_of_overflight_period_jpg=False,
+                       to_get_histogram_of_overflight_period_png=False,
                        to_skip_time_out_of_observation_period_in_periods=False,
                        to_skip_time_out_of_observation_period_in_information_value=False,
                        time_axis_in_units=False,
@@ -342,14 +375,14 @@ class Task:
                 среднее, медианное, максимальное, минимальное значениее времени выполнения задачи, дисперсию и
                 среднеквадратическое отклонение (далее основные оказатели) и выводит в виде докумена txt;
                 гистограмму распределения времении выполнения задачи и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, jpg;
+                    графичечском виде в документе pdf, png;
                 основные показатели периодичности пролётов спутников над полигонами и выводит в виде докумена txt;
                 гистограмму распределения периода пролётов спутников над полигонами и выводит в текстовом виде в
-                    документе txt, в графичечском видиде в документе pdf, jpg;
+                    документе txt, в графичечском видиде в документе pdf, png;
                 график прироста просканированной территории (в м^2 или в %) за выбранный период времени и выводит в
-                    текстовом виде в документе txt, в графичечском виде в документе pdf, jpg;
+                    текстовом виде в документе txt, в графичечском виде в документе pdf, png;
                 график просканированной территории (в м^2 или в %)  и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, jpg.
+                    графичечском виде в документе pdf, png.
         :param directory_address: адрес директории, в которую сохраняются выходные данные
         :param unit_of_output_time: единицы измерения времени (см. TimeManagement), в которых будут выводиться выходные,
             связанные со временем.
@@ -368,27 +401,27 @@ class Task:
         :param to_get_graph_information_collection_rate_pdf: вывести зависимость площади просканированной территории за
             текущий шаг времени от времени в виде графика в файл pdf (если True, если False, то не выводить). По
             умолчанию False.
-        :param to_get_graph_information_collection_rate_jpg: вывести зависимость площади просканированной территории за
-            текущий шаг времени от времени в виде графика в файл jpg (если True, если False, то не выводить). По
+        :param to_get_graph_information_collection_rate_png: вывести зависимость площади просканированной территории за
+            текущий шаг времени от времени в виде графика в файл png (если True, если False, то не выводить). По
             умолчанию False.
         :param to_get_graph_information_volume_txt: вывести зависимость площади просканированной территории от времени в
             виде таблицы в файл txt (если True, если False, то не выводить). По умолчанию False.
         :param to_get_graph_information_volume_pdf: вывести зависимость площади просканированной территории от времени в
             виде графика в файл pdf (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_graph_information_volume_jpg: вывести зависимость площади просканированной территории от времени в
-            виде графика в файл jpg (если True, если False, то не выводить). По умолчанию False.
+        :param to_get_graph_information_volume_png: вывести зависимость площади просканированной территории от времени в
+            виде графика в файл png (если True, если False, то не выводить). По умолчанию False.
         :param to_get_histogram_of_solving_period_txt: вывести время выполнения задачи в виде гистограммы в файл txt
             (если True, если False, то не выводить). По умолчанию False.
         :param to_get_histogram_of_solving_period_pdf: вывести время выполнения задачи в виде гистограммы в файл pdf
             (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_solving_period_jpg: вывести время выполнения задачи в виде гистограммы в файл jpg
+        :param to_get_histogram_of_solving_period_png: вывести время выполнения задачи в виде гистограммы в файл png
             (если True, если False, то не выводить). По умолчанию False.
         :param to_get_histogram_of_overflight_period_txt: вывести время между пролетамми спутников над полигонами в виде
             гистограммы в файл txt (если True, если False, то не выводить). По умолчанию False.
         :param to_get_histogram_of_overflight_period_pdf: вывести время между пролетамми спутников над полигонами в виде
             гистограммы в файл pdf (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_overflight_period_jpg: вывести время между пролетамми спутников над полигонами в виде
-            гистограммы в файл jpg (если True, если False, то не выводить). По умолчанию False.
+        :param to_get_histogram_of_overflight_period_png: вывести время между пролетамми спутников над полигонами в виде
+            гистограммы в файл png (если True, если False, то не выводить). По умолчанию False.
         :param to_skip_time_out_of_observation_period_in_periods: не учитывать во времени выполнения задачи и времени
             между пролетами спутников периоды, в которые не проводится наблюдение (время вне периода годового
             наблюдения) (если True, если False, то учитывать). По умолчанию False.
@@ -406,28 +439,28 @@ class Task:
         # Будет ли выводиться зависимость просканированной площади за шаг времени от времени в каком-либо виде
         if to_get_graph_information_collection_rate_txt or \
                 to_get_graph_information_collection_rate_pdf or \
-                to_get_graph_information_collection_rate_jpg:
+                to_get_graph_information_collection_rate_png:
             to_get_graph_information_collection_rate = True
         else:
             to_get_graph_information_collection_rate = False
         # Будет ли выводиться зависимость просканированной площади от времени в каком-либо виде
         if to_get_graph_information_volume_txt or \
                 to_get_graph_information_volume_pdf or \
-                to_get_graph_information_volume_jpg:
+                to_get_graph_information_volume_png:
             to_get_graph_information_volume = True
         else:
             to_get_graph_information_volume = False
         # Будет ли выводиться гистограмма времени между решениями в каком-либо виде
         if to_get_histogram_of_solving_period_txt or \
                 to_get_histogram_of_solving_period_pdf or \
-                to_get_histogram_of_solving_period_jpg:
+                to_get_histogram_of_solving_period_png:
             to_get_histogram_of_solving_period = True
         else:
             to_get_histogram_of_solving_period = False
         # Будет ли выводиться гистограмма времени между пролетами спутников над полигонами в каком-либо виде
         if to_get_histogram_of_overflight_period_txt or \
                 to_get_histogram_of_overflight_period_pdf or \
-                to_get_histogram_of_overflight_period_jpg:
+                to_get_histogram_of_overflight_period_png:
             to_get_histogram_of_overflight_period = True
         else:
             to_get_histogram_of_overflight_period = False
@@ -437,7 +470,7 @@ class Task:
         if time_axis_in_units:
             unit_symbol = unit_in_symbol(unit_of_output_time)
         else:
-            unit_symbol = "yyyy-MM-dd hh:mm:ss"
+            unit_symbol = "time"
         # Вычисление периодов между решениями задачи по списку времени выполнения self.time_of_solutions
         periods_of_solutions = []
         if to_get_main_data_about_solutions or to_get_histogram_of_solving_period:
@@ -541,25 +574,30 @@ class Task:
 
                     table_information_volume_file.write("".join([graph_title, '\n\n',
                                                                  self.to_get_information_about_task(), unit_symbol,
-                                                                 '\t\t', symbol_of_units_of_information, '\n']))
+                                                                 '\t\t\t\t', symbol_of_units_of_information, '\n']))
                     for i in range(0, len(information_collection_rate_axis)):
                         table_information_volume_file.write("".join([str(time_axis[i]), '\t\t',
                                                                      str(information_collection_rate_axis[i]), '\n']))
                 # Если предполагается вывод зависимости в виде графиков, то график строится с заголовком и названием
                 #   осей
-                if to_get_graph_information_collection_rate_jpg or to_get_graph_information_collection_rate_pdf:
+                if to_get_graph_information_collection_rate_png or to_get_graph_information_collection_rate_pdf:
                     graph_information_collection_rate = plt.figure()
                     plt.plot(time_axis, information_collection_rate_axis, color='blue')
                     plt.axis([time_axis[0], time_axis[-1], information_collection_rate_axis[0],
-                              information_collection_rate_axis[-1]])
-
+                              information_collection_rate_axis[-1] + 1])
                     plt.title(graph_title)
                     plt.ylabel("".join(['Информация (', symbol_of_units_of_information, ')']))
                     plt.xlabel("".join(['Время (', unit_symbol, ')']))
                     plt.grid(True)
-                    # Вывод зависимости в виде графика в файле jpg, если требуется
-                    if to_get_graph_information_collection_rate_jpg:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.jpg']))
+                    plt.rcParams['pdf.fonttype'] = 42
+                    plt.rcParams['font.family'] = 'Calibri'
+                    if not time_axis_in_units:
+                        for label in graph_information_collection_rate.add_subplot(111).xaxis.get_ticklabels():
+                            # label - это экземпляр текста Text
+                            label.set_rotation(-10)
+                    # Вывод зависимости в виде графика в файле png, если требуется
+                    if to_get_graph_information_collection_rate_png:
+                        graph_information_collection_rate.savefig("".join([graph_address, '.png']))
                     # Вывод зависимости в виде графика в файле pdf, если требуется
                     if to_get_graph_information_collection_rate_pdf:
                         graph_information_collection_rate.savefig("".join([graph_address, '.pdf']))
@@ -580,25 +618,25 @@ class Task:
 
                     table_information_volume_file.write("".join([graph_title, '\n\n',
                                                                  self.to_get_information_about_task(), unit_symbol,
-                                                                 '\t\t', symbol_of_units_of_information, '\n']))
+                                                                 '\t\t\t\t', symbol_of_units_of_information, '\n']))
                     for i in range(0, len(information_volume_axis)):
                         table_information_volume_file.write("".join([str(time_axis[i]), '\t\t',
                                                                      str(information_volume_axis[i]), '\n']))
                 # Если предполагается вывод зависимости в виде графиков, то график строится с заголовком и названием
                 #   осей
-                if to_get_graph_information_collection_rate_jpg or to_get_graph_information_collection_rate_pdf:
+                if to_get_graph_information_collection_rate_png or to_get_graph_information_collection_rate_pdf:
                     graph_information_collection_rate = plt.figure()
                     plt.plot(time_axis, information_volume_axis, color='purple')
                     plt.axis([time_axis[0], time_axis[-1], information_volume_axis[0],
-                              information_volume_axis[-1]])
+                              information_volume_axis[-1] + 1])
 
                     plt.title(graph_title)
                     plt.ylabel("".join(['Информация (', symbol_of_units_of_information, ')']))
                     plt.xlabel("".join(['Время (', unit_symbol, ')']))
                     plt.grid(True)
-                    # Вывод зависимости в виде графика в файле jpg, если требуется
-                    if to_get_graph_information_collection_rate_jpg:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.jpg']))
+                    # Вывод зависимости в виде графика в файле png, если требуется
+                    if to_get_graph_information_collection_rate_png:
+                        graph_information_collection_rate.savefig("".join([graph_address, '.png']))
                     # Вывод зависимости в виде графика в файле pdf, если требуется
                     if to_get_graph_information_collection_rate_pdf:
                         graph_information_collection_rate.savefig("".join([graph_address, '.pdf']))
@@ -618,24 +656,24 @@ class Task:
                 histogram_of_solutions_file = open("".join([histogram_address, '.txt']), 'w')
 
                 histogram_of_solutions_file.write("".join([histogram_title, '\n\n',
-                                                           self.to_get_information_about_task(), x_label, '\t\t\t\t',
+                                                           self.to_get_information_about_task(), x_label, '\t',
                                                            y_label, '\n']))
                 for i in range(0, len(histogram_of_solving_periods)):
                     histogram_of_solutions_file.write("".join([str(i), '\t\t\t\t', str(histogram_of_solving_periods[i]),
                                                                '\n']))
                 histogram_of_solutions_file.close()
             # Если гистограмма выводится в графическом виде
-            if to_get_histogram_of_solving_period_jpg or to_get_histogram_of_solving_period_pdf:
+            if to_get_histogram_of_solving_period_png or to_get_histogram_of_solving_period_pdf:
                 # Построение гистограммы в графическом виде
                 hist_of_solving_periods = plt.figure()
                 plt.hist(histogram_of_solving_periods, color='red')
-                plt.axis([0, len(histogram_of_solving_periods), 0, max(histogram_of_solving_periods)])
+                plt.axis([0, len(histogram_of_solving_periods) + 1, 0, max(histogram_of_solving_periods) + 1])
                 plt.title(histogram_title)
                 plt.xlabel(x_label)
                 plt.ylabel(y_label)
-                # Вывод гистограммы в файле jpg, если требуется
-                if to_get_histogram_of_solving_period_jpg:
-                    hist_of_solving_periods.savefig("".join([histogram_address, '.jpg']))
+                # Вывод гистограммы в файле png, если требуется
+                if to_get_histogram_of_solving_period_png:
+                    hist_of_solving_periods.savefig("".join([histogram_address, '.png']))
                 # Вывод гистограммы в файле pdf, если требуется
                 if to_get_histogram_of_solving_period_pdf:
                     hist_of_solving_periods.savefig("".join([histogram_address, '.pdf']))
@@ -655,7 +693,7 @@ class Task:
                 histogram_of_overflight_file = open("".join([histogram_address, '.txt']), 'w')
 
                 histogram_of_overflight_file.write("".join([histogram_title, '\n\n',
-                                                            self.to_get_information_about_task(), x_label, '\t\t\t\t',
+                                                            self.to_get_information_about_task(), x_label, '\t\t',
                                                             y_label, '\n']))
 
                 for i in range(0, len(histogram_of_overflight_periods)):
@@ -664,17 +702,17 @@ class Task:
 
                 histogram_of_overflight_file.close()
             # Если гистограмма выводится в графическом виде
-            if to_get_histogram_of_overflight_period_jpg or to_get_histogram_of_overflight_period_pdf:
+            if to_get_histogram_of_overflight_period_png or to_get_histogram_of_overflight_period_pdf:
                 hist_of_overflight_periods = plt.figure()
                 plt.hist(histogram_of_overflight_periods, color='green')
-                plt.axis([0, len(histogram_of_overflight_periods), 0, max(histogram_of_overflight_periods)])
+                plt.axis([0, len(histogram_of_overflight_periods) + 1, 0, max(histogram_of_overflight_periods) + 1])
 
                 plt.title(histogram_title)
                 plt.xlabel("".join(['Период пролетов (', unit_symbol, ')']))
                 plt.ylabel('Количество пролетов')
-                # Вывод гистограммы в файле jpg, если требуется
-                if to_get_histogram_of_solving_period_jpg:
-                    hist_of_overflight_periods.savefig("".join([histogram_address, '.jpg']))
+                # Вывод гистограммы в файле png, если требуется
+                if to_get_histogram_of_solving_period_png:
+                    hist_of_overflight_periods.savefig("".join([histogram_address, '.png']))
                 # Вывод гистограммы в файле pdf, если требуется
                 if to_get_histogram_of_solving_period_pdf:
                     hist_of_overflight_periods.savefig("".join([histogram_address, '.pdf']))
@@ -702,7 +740,9 @@ class Task:
         :return: в поле self.satelliteGroup записывается satellites_group
         """
         self.satellites_group = satellites_group
-        # Производится очистка собранных данных, чтобы выходная информация не отличалась от пааметров задачи
+        # Назначение для группы спутников satellites_group этой задачи
+        self.satellites_group.task = self
+        # Производится очистка собранных данных, чтобы выходная информация не отличалась от параметров задачи
         self.to_clear_statistic_data()
 
     def to_set_polygons_group(self, polygons_group):
@@ -717,6 +757,16 @@ class Task:
         self.polygons_group = polygons_group
         # Производится очистка собранных данных, чтобы выходная информация не отличалась от пааметров задачи
         self.to_clear_statistic_data()
+
+    def common_cloudiness_is_calculated(self, common_cloudiness_is_calculated=True):
+        """
+        @Описание:
+            Устанавливает логическую величину common_cloudiness_is_calculated, то есть постановляет, вычислять ли
+                облачность для всех полигонов вместе или для каждого отдельно.
+        :param common_cloudiness_is_calculated: логическое значение, которое устанавливается (boolean)
+        :return: устанавливается логическая величина self.common_cloudiness_is_calculated
+        """
+        self.common_cloudiness_is_calculated = common_cloudiness_is_calculated
 
     def to_set_task_characteristics(self, initial_simulation_time, final_simulation_time, step,
                                     max_zenith_angle, max_cloud_score, initial_annual_observation_period,
@@ -768,6 +818,17 @@ class Task:
         self.to_set_min_percent_for_solve(min_percent_for_solve)
         # Производится очистка собранных данных, чтобы выходная информация не отличалась от пааметров задачи
         self.to_clear_statistic_data()
+
+    def to_set_considering_considering_partial_cloudiness(self, to_consider_partial_cloudiness):
+        """
+        @Описание:
+            Метод задаёт поле self.to_consider_partial_cloudiness, которое определяет, учитывать ли во время
+            моделирования частичную облачность над полигонами.
+        :param to_consider_partial_cloudiness: присваиваемое self.to_consider_partial_cloudiness значение (boolean)
+        :return: полю self.to_consider_partial_cloudiness присваивается значение аргумента
+                 to_consider_partial_cloudiness
+        """
+        self.to_consider_partial_cloudiness = to_consider_partial_cloudiness
 
     def to_set_border_of_simulation_time(self, initial_simulation_time, final_simulation_time):
         """
@@ -885,8 +946,12 @@ class Task:
         self.time_of_solutions = []
 
     def to_output_report(self, report_file=None,
-                         time_from_initial_time_in_days=True,
+                         time_from_initial_time=True,
+                         time_unit_from_initial_time='days',
                          data_about_satellites=True,
+                         count_of_numerals_after_point_in_geo_coordinates=3,
+                         count_of_numerals_after_point_in_altitude=1,
+                         count_of_numerals_after_point_in_velocity=2,
                          data_about_solutions=True,
                          data_about_overflights=True,
                          time_unit='days',
@@ -894,7 +959,7 @@ class Task:
                          to_skip_time_out_of_observation_period=False,
                          data_about_scanned_area=True,
                          scanned_area_in_percents=True,
-                         count_of_numbers_after_point_in_area_report=0):
+                         count_of_numbers_after_point_in_area_report=2):
         """
         @Описание:
             Метод выводит отчет о координатах спутников группы self.satellite_group, о решениях задачи, о пролетах
@@ -903,10 +968,18 @@ class Task:
                 адресу, если он был задан.
         :param report_file: адрес файла txt, в который будут выводиться отчёты. Если задано None, запись
             отчётов в файл не производится (String, допустимо None).
-        :param time_from_initial_time_in_days: написать в отчете время от начального модельного времени до текущего в
-            днях (boolean). По умолчанию True.
+        :param time_from_initial_time: написать в отчете время от начального модельного времени до текущего в единицах
+            измерения времени time_unit_from_initial_time (boolean). По умолчанию True.
+        :param time_unit_from_initial_time: единицы измерения времени, в которых будет выводиться врем от модельного
+            времени начала наблюдения (предполагается, что будет соответствовать времени, через которое делается отчет).
         :param data_about_satellites: написать в отчете координаты каждого спутника в текущее модельное время (boolean).
             По умолчанию True.
+        :param count_of_numerals_after_point_in_geo_coordinates: количество знаков после точки при выводе географических
+            координат (в градусах) спутников отчете о состоянии. По умолчанию 3.
+        :param count_of_numerals_after_point_in_altitude: количество знаков после точки при выводе высоты (в метрах) над
+            поверхностью Земли спутников в отчете о состоянии. По умолчанию 1.
+        :param count_of_numerals_after_point_in_velocity: количество знаков после точки при выводе скорости (в метрах в
+            секунду) спутников отчете о состоянии. По умолчанию 2.
         :param data_about_solutions: написать в отчете данные о времени решений: среднее, максимальное, минимальное,
             среднеквадратическое отклонение, а также общее количество решений от начального модельного времени до
             текущего (boolean). По умолчанию True.
@@ -925,13 +998,17 @@ class Task:
         :param scanned_area_in_percents: выводить отчет о площпди просканированной территории self.polygon_group в
             процентах (boolean). Если False, то выводитсяв кв. м. По умолчанию True.
         :param count_of_numbers_after_point_in_area_report: количество знаков после запятой в отчете просканированных
-            территориях (int). По умолчанию 0.
+            территориях (int). По умолчанию 2.
         :return: выводит в консоль и в файл txt по адресу report_file отчет, составляемый с помощью метода
             self.to_make_report
         """
         # Текст отчета составляется с помощью метода self.to_make_report
-        report = self.to_make_report(time_from_initial_time_in_days,
+        report = self.to_make_report(time_from_initial_time,
+                                     time_unit_from_initial_time,
                                      data_about_satellites,
+                                     count_of_numerals_after_point_in_geo_coordinates,
+                                     count_of_numerals_after_point_in_altitude,
+                                     count_of_numerals_after_point_in_velocity,
                                      data_about_solutions,
                                      data_about_overflights,
                                      time_unit,
@@ -946,8 +1023,12 @@ class Task:
         if report_file is not None:
             report_file.write(report)
 
-    def to_make_report(self, time_from_initial_time_in_days=True,
+    def to_make_report(self, time_from_initial_time=True,
+                       time_unit_from_initial_time='days',
                        data_about_satellites=True,
+                       count_of_numerals_after_point_in_geo_coordinates=3,
+                       count_of_numerals_after_point_in_altitude=1,
+                       count_of_numerals_after_point_in_velocity=2,
                        data_about_solutions=True,
                        data_about_overflights=True,
                        time_unit='days',
@@ -955,16 +1036,24 @@ class Task:
                        to_skip_time_out_of_observation_period=False,
                        data_about_scanned_area=True,
                        scanned_area_in_percents=True,
-                       count_of_numbers_after_point_in_area_report=0):
+                       count_of_numbers_after_point_in_area_report=2):
         """
         @Описание:
             Метод составляет отчет о координатах спутников группы self.satellite_group, о решениях задачи, о пролетах
                 спутников над полигонами self.polygons_group, о площади просканированнной территории полигонов с
                 некоторой заданной периодичностью модельного времени.
-        :param time_from_initial_time_in_days: написать в отчете время от начального модельного времени до текущего в
-            днях (boolean). По умолчанию True.
+        :param time_from_initial_time: написать в отчете время от начального модельного времени до текущего в единицах
+            измерения времени time_unit_from_initial_time (boolean). По умолчанию True.
+        :param time_unit_from_initial_time: единицы измерения времени, в которых будет выводиться врем от модельного
+            времени начала наблюдения (предполагается, что будет соответствовать времени, через которое делается отчет).
         :param data_about_satellites: написать в отчете координаты каждого спутника в текущее модельное время (boolean).
             По умолчанию True.
+        :param count_of_numerals_after_point_in_geo_coordinates: количество знаков после точки при выводе географических
+            координат (в градусах) спутников отчете о состоянии. По умолчанию 3.
+        :param count_of_numerals_after_point_in_altitude: количество знаков после точки при выводе высоты (в метрах) над
+            поверхностью Земли спутников в отчете о состоянии. По умолчанию 1.
+        :param count_of_numerals_after_point_in_velocity: количество знаков после точки при выводе скорости (в метрах в
+            секунду) спутников отчете о состоянии. По умолчанию 2.
         :param data_about_solutions: написать в отчете данные о времени решений: среднее, максимальное, минимальное,
             среднеквадратическое отклонение, а также общее количество решений от начального модельного времени до
             текущего (boolean). По умолчанию True.
@@ -983,7 +1072,7 @@ class Task:
         :param scanned_area_in_percents: выводить отчет о площпди просканированной территории self.polygon_group в
             процентах (boolean). Если False, то выводитсяв кв. м. По умолчанию True.
         :param count_of_numbers_after_point_in_area_report: количество знаков после запятой в отчете просканированных
-            территориях (int). По умолчанию 0.
+            территориях (int). По умолчанию 2.
         :return: текст отчета (String) в виде (полный текст отчета):
             Время: 'yyyy-MM-dd hh:mm:ss' - 'ddd' дней начального времени
             Состояние спутников:
@@ -1017,19 +1106,24 @@ class Task:
         current_time = self.satellites_group.simulation_time
         # Строка текущего времени
         str_time_report = "".join(['Время: ', str(current_time)])
-        # Время от начального модельного времени до текущего в днях
-        if time_from_initial_time_in_days:
-            str_addition_time_report = "".join([' - ', str(round((current_time - self.initial_simulation_time).
-                                                                 total_days())), 'дней от начального времени'])
+        # Время от начального модельного времени до текущего
+        if time_from_initial_time:
+            str_addition_time_report = "".join([' - ', str(round(
+                seconds_to_unit((current_time - self.initial_simulation_time).total_seconds(),
+                                time_unit_from_initial_time))), ' ', unit_in_symbol(time_unit_from_initial_time),
+                                                ' от начального времени'])
         else:
             str_addition_time_report = ''
         # Отчет о состоянии спутников в группе self.satellite_group
         if data_about_satellites:
             str_satellites_data = ['Состояние спутников:\n']
-            for satellite in self.satellites_group.satillites_list:
-                str_satellites_data.append("".join(['\t', str(satellite.name), ':\t',
-                                                    str(satellite.satellite_coordinates_set), '\n']))
-            "".join(str_satellites_data)
+            for satellite in self.satellites_group.satellites_list:
+                str_satellites_data.append("".join(['\t', str(satellite.sat_name), ':\t',
+                                                    satellite.satellite_coordinates_set.to_str(
+                                                        count_of_numerals_after_point_in_geo_coordinates,
+                                                        count_of_numerals_after_point_in_altitude,
+                                                        count_of_numerals_after_point_in_velocity), '\n']))
+            str_satellites_data = "".join(str_satellites_data)
         else:
             str_satellites_data = ''
 
@@ -1079,25 +1173,27 @@ class Task:
         # Отчет о площади просканированной территории полигонов self.polygon_group
         if data_about_scanned_area:
             str_scanned_area = ['Данные о ходе сканирования:\n']
-            scanned_area_list = \
-                round(self.polygons_group.to_calc_percentages_of_grabbed_areas(scanned_area_in_percents),
-                      count_of_numbers_after_point_in_area_report)
+            scanned_area_list = self.polygons_group.to_calc_percentages_of_grabbed_areas(scanned_area_in_percents)
             # Вывод процентах или кв. м.
             if scanned_area_in_percents:
                 for i in range(0, len(scanned_area_list)):
                     str_scanned_area.append("".join(['\t', str(i + 1), ' раз просканированно ',
-                                                     str(scanned_area_list[i]), '% исследуемой территории\n']))
+                                                     str(round(scanned_area_list[i],
+                                                               count_of_numbers_after_point_in_area_report)),
+                                                         '% исследуемой территории\n']))
                 "".join(str_scanned_area)
             else:
                 for i in range(0, len(scanned_area_list)):
-                    str_scanned_area.append("".join(['\t', str(i + 1), ' раз просканированно ',
-                                                     str(scanned_area_list[i]), ' м^2 исследуемой территории\n']))
-                "".join(str_scanned_area)
+                    str_scanned_area.append(
+                        "".join(['\t', str(i + 1), ' раз просканированно '
+                                    ,str(round(scanned_area_list[i], count_of_numbers_after_point_in_area_report)),
+                                 ' м^2 исследуемой территории\n']))
+            str_scanned_area = "".join(str_scanned_area)
         else:
             str_scanned_area = ''
         # Сшивание частей отчета
-        str_report = [str_time_report, str_addition_time_report, '\n', str_satellites_data, str_solutions_report,
-                      str_overflights_report, str_scanned_area, '\n']
+        str_report = "".join([str_time_report, str_addition_time_report, '\n', str_satellites_data,
+                              str_solutions_report, str_overflights_report, str_scanned_area, '\n'])
         return str_report
 
     def to_define_initial_times_of_scan_session(self):
@@ -1110,16 +1206,17 @@ class Task:
         time_of_growth_of_information = self.time_of_growth_of_information
         # Массив модельного времени пролетов
         time_of_overflights = []
-        # Начальное время первого пролёта
-        initial_time_of_overflight = time_of_growth_of_information[0]
-        # Вычисление времен начала пролетов. Началом пролета считается то время, когда сбор данных только начался, а до
-        #   этого был нулевым
-        for i in range(1, len(time_of_growth_of_information)):
-            if (time_of_growth_of_information[i] - time_of_growth_of_information[i - 1]).total_seconds() > \
+        if len(time_of_growth_of_information) > 0:
+            # Начальное время первого пролёта
+            initial_time_of_overflight = time_of_growth_of_information[0]
+            # Вычисление времен начала пролетов. Началом пролета считается то время, когда сбор данных только начался, а до
+            #   этого был нулевым
+            for i in range(1, len(time_of_growth_of_information)):
+                if (time_of_growth_of_information[i] - time_of_growth_of_information[i - 1]).total_seconds() > \
                     self.step:
-                time_of_overflights.append(initial_time_of_overflight)
-                initial_time_of_overflight = time_of_growth_of_information[i]
-        time_of_overflights.append(initial_time_of_overflight)
+                    time_of_overflights.append(initial_time_of_overflight)
+                    initial_time_of_overflight = time_of_growth_of_information[i]
+            time_of_overflights.append(initial_time_of_overflight)
         return time_of_overflights
 
     def to_get_main_data_about_periods(self, periods, unit_of_output_time, numerals_count_after_point,
@@ -1180,12 +1277,12 @@ class Task:
                                          numerals_count_after_point)
         # Запись вычесленных данных в строку
         str_data_about_periods = "".join([
-            '\tСредний период:\t\t\t', str(average_period_value), unit_symbol, '\n',
-            '\tМедианный период:\t\t', str(median_period_value), unit_symbol, '\n',
-            '\tМаксимальный период:\t', str(max_period_value), unit_symbol, '\n',
-            '\tМинимальный период:\t\t', str(min_period_value), unit_symbol, '\n',
-            '\tДисперсия:\t\t\t\t', str(dispersion_period_value), unit_symbol, '\n',
-            '\tСреднее кв. отклнение:', str(standard_deviation_period_value), unit_symbol, '\n',
+            '\tСредний период:\t\t\t', str(average_period_value), ' ', unit_symbol, '\n',
+            '\tМедианный период:\t\t', str(median_period_value), ' ', unit_symbol, '\n',
+            '\tМаксимальный период:\t', str(max_period_value), ' ', unit_symbol, '\n',
+            '\tМинимальный период:\t\t', str(min_period_value), ' ', unit_symbol, '\n',
+            '\tДисперсия:\t\t\t\t', str(dispersion_period_value), ' ', unit_symbol, '\n',
+            '\tСреднее кв. отклнение:\t', str(standard_deviation_period_value), ' ', unit_symbol, '\n',
             '\tВсего за время моделирования - ', str(overall_time_of_modeling), ' ', unit_symbol,
             ' - было сделано ', str(len(periods)), ' измерений'])
         return str_data_about_periods
@@ -1205,12 +1302,24 @@ class Task:
             dispersion: дисперсия по списку numbers (double)
             standard_deviation: среднеквадратическое отклонение по списку numbers (double)
         """
-        average_value = statistics.mean(numbers)
-        median_value = statistics.median(numbers)
-        max_value = max(numbers)
-        min_value = min(numbers)
-        dispersion = statistics.pvariance(numbers)
-        standard_deviation = statistics.pstdev(numbers)
+        if len(numbers) > 0:
+            average_value = statistics.mean(numbers)
+            median_value = statistics.median(numbers)
+            max_value = max(numbers)
+            min_value = min(numbers)
+            if len(numbers) > 1:
+                dispersion = statistics.variance(numbers)
+                standard_deviation = statistics.stdev(numbers)
+            else:
+                dispersion = 0
+                standard_deviation = 0
+        else:
+            average_value = 0
+            median_value = 0
+            max_value = 0
+            min_value = 0
+            dispersion = 0
+            standard_deviation = 0
         return average_value, median_value, max_value, min_value, dispersion, standard_deviation
 
     def to_get_information_about_task(self):
@@ -1240,8 +1349,8 @@ class Task:
         # Запись списка спутников self.satellites_group.satellites_list в строку
         str_satellites = []
         for satellite in self.satellites_group.satellites_list:
-            str_satellites.append("".join([satellite.name, ', ']))
-        "".join(str_satellites)
+            str_satellites.append("".join([satellite.sat_name, ', ']))
+        str_satellites = "".join(str_satellites)
         # Удаление запятой в конце строчного списка спутников
         str_satellites = str_satellites[:-2]
         # Запись границ годового периода наблюдений в строку, если он задан и 'не задан', если не задан
@@ -1253,13 +1362,14 @@ class Task:
                                               str(self.final_annual_observation_period), ' дня'])
         # Запись информации в строку
         str_info = "".join([
-            'Основные параметры задачи\t\t\t\t\t', str(self.name), '\n',
-            '\tМодельное время:\tот ', str(self.initial_simulation_time), ' до ', str(self.final_simulation_time), '\n',
-            '\tШаг изменения модельного времени:\t\t\t\t', str(self.step), ' с\n',
-            '\tСпутники, выполняющие задачу:\t\t\t\t\t', str_satellites, '\n',
-            '\tДопустимый период наблюдения:\t\t\t\t\t', str_annual_observation, '\n',
-            '\tМаксимально допустимый зенитный угол Солнца\t: ', str(self.max_zenith_angle), '°\n',
-            '\tМаксимально допустимый балл облачности:\t\t\t', str(self.max_cloud_score), '\n\n'])
+            'Основные параметры задачи\t', str(self.name), ':\n',
+            '\tМодельное время:\t\t\t\tот ', str(self.initial_simulation_time), ' до ', str(self.final_simulation_time),
+            '\n',
+            '\tШаг изменения модельного времени:\t\t', str(self.step), ' с\n',
+            '\tСпутники, выполняющие задачу:\t\t\t', str_satellites, '\n',
+            '\tДопустимый период наблюдения:\t\t\t', str_annual_observation, '\n',
+            '\tМаксимально допустимый зенитный угол Солнца:\t', str(self.max_zenith_angle), '°\n',
+            '\tМаксимально допустимый балл облачности:\t\t', str(self.max_cloud_score), '\n\n'])
         return str_info
 
     def to_identify_periods_sec(self, time_list, first_time=None, to_skip_time_out_of_observation_period=False):
@@ -1276,19 +1386,19 @@ class Task:
         :return: список приодов в секундах (int, double)
         """
         # Если нету пары значений времени (начального времени first_time и одного значения из time_list или два значения
-        #   из time_list), то возвращается 0, а дальнейшие вычисления не производятся. Если есть, то задаётся первое
+        #   из time_list), то возвращается [], а дальнейшие вычисления не производятся. Если есть, то задаётся первое
         #   значение времени, от которого будет вестись отсчет - previous_time.
         if first_time is not None:
-            if len(time_list > 0):
+            if len(time_list) > 0:
                 previous_time = first_time
             else:
-                return [0]
+                return []
         else:
             if len(time_list > 1):
                 previous_time = time_list[0]
                 del time_list[0]
             else:
-                return [0]
+                return []
         # В список periods записываются периоды
         periods = []
         # Если не пропускается время между периодами наблюдения
@@ -1433,7 +1543,7 @@ class Task:
             final_annual_observation_period = self.final_annual_observation_period
             # Цикл по всему time_axis
             while i < len(time_axis):
-                day_number = to_determine_days_number_in_not_leap_year(times[i])
+                day_number = to_determine_days_number_in_not_leap_year(time_axis[i])
                 current_day_between_borders_of_annual_observation_period =\
                     initial_annual_observation_period < day_number < final_annual_observation_period
                 current_day_in_observation_period = (not self.observation_period_inside_one_year or
@@ -1443,12 +1553,12 @@ class Task:
                     day_number == initial_annual_observation_period or \
                     day_number == final_annual_observation_period
 
-                if not current_day_in_observation_period:
+                if current_day_in_observation_period:
                     i = i + 1
                 else:
                     # Удаление лишних значений
-                    del values[i]
-                    del times[i]
+                    del value_axis[i]
+                    del time_axis[i]
         # Перевод времени datetime в единицы измерения времени unit_of_time
         if time_axis_in_units:
             initial_time = times[0]
@@ -1467,7 +1577,7 @@ class Task:
         """
         summed_axis = [axis[0]]
         for i in range(1, len(axis)):
-            summed_axis.append(axis(i) + summed_axis[i - 1])
+            summed_axis.append(axis[i] + summed_axis[i - 1])
         return summed_axis
 
     @staticmethod

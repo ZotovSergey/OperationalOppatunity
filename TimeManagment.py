@@ -35,10 +35,10 @@ def unit_in_symbol(unit):
         symbol = 'min'
     elif unit == 'hours':
         symbol = 'h'
-    elif unit == 'weeks':
-        symbol = 'w'
     elif unit == 'days':
         symbol = 'd'
+    elif unit == 'weeks':
+        symbol = 'w'
     elif unit == 'months':
         symbol = 'mon'
     elif unit == 'years':
@@ -65,10 +65,10 @@ def seconds_to_unit(seconds, unit):
         seconds = seconds_to_minutes(seconds)
     elif unit == 'hours':
         seconds = seconds_to_hours(seconds)
-    elif unit == 'weeks':
-        seconds = seconds_to_weeks(seconds)
     elif unit == 'days':
         seconds = seconds_to_days(seconds)
+    elif unit == 'weeks':
+        seconds = seconds_to_weeks(seconds)
     elif unit == 'months':
         seconds = seconds_to_months(seconds)
     elif unit == 'years':
@@ -94,6 +94,8 @@ def to_get_unit_in_seconds(unit):
         seconds_quantity = SECONDS_IN_HOURS
     elif unit == 'days':
         seconds_quantity = SECONDS_IN_DAYS
+    elif unit == 'weeks':
+        seconds_quantity = SECONDS_IN_WEEKS
     elif unit == 'months':
         seconds_quantity = SECONDS_IN_MONTHS
     elif unit == 'years':

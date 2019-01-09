@@ -27,20 +27,27 @@ class GeoCoordinates:
         self.lat = lat
         self.alt = alt
 
-    def __str__(self):
+    def to_str(self, count_of_numerals_after_point_in_geo_coordinates=3, count_of_numerals_after_point_in_altitude=1):
         """
-        :return: ** с. ш.(ю. ш.)   ** з. д.(в. д.)  **** м
+        @Описание:
+            Вывод географических координат (градусы) и высоты над поверхностью Земли в виде строки
+        :param count_of_numerals_after_point_in_geo_coordinates: количество знаков после точки при выводе географических
+            координат (в градусах). По умолчанию 3.
+        :param count_of_numerals_after_point_in_altitude: количество знаков после точки при выводе высоты (в метрах) над
+            поверхностью Земли. По умолчанию 1.
+        :return: строку (String) в виде:
+            ***.*** с. ш.(ю. ш.)   ***.*** з. д.(в. д.)  ****.* м
         """
         if self.long >= 0:
-            long_str = str(self.long) + ' в. д.'
+            long_str = str(round(self.long, count_of_numerals_after_point_in_geo_coordinates)) + ' в. д.'
         else:
-            long_str = str(abs(self.long)) + ' з. д.'
+            long_str = str(round(-self.long, count_of_numerals_after_point_in_geo_coordinates)) + ' з. д.'
 
         if self.lat >= 0:
-            lat_str = str(self.lat) + ' с. ш.'
+            lat_str = str(round(self.lat, count_of_numerals_after_point_in_geo_coordinates)) + ' с. ш.'
         else:
-            lat_str = str(abs(self.lat)) + ' ю. ш.'
-        return lat_str + '\t' + long_str + '\t' + str(self.alt) + ' м'
+            lat_str = str(round(-self.lat, count_of_numerals_after_point_in_geo_coordinates)) + ' ю. ш.'
+        return lat_str + '\t' + long_str + '\t' + str(round(self.alt, count_of_numerals_after_point_in_altitude)) + ' м'
 
     def to_cartesian_coordinates(self, utc_time, earth_ellipsoid):
         """
@@ -56,7 +63,7 @@ class GeoCoordinates:
         # a - большая полуось данного эллипсоид (в плоскости экватора)
         a = earth_ellipsoid.semi_major_axis
         # b - малая полуось данного эллипсоид (вдоль оси z)
-        b = earth_ellipsoid.semi_minor_axle
+        b = earth_ellipsoid.semi_minor_axis
         # Проверка того, задано ли время
         if utc_time is not None:
             # Если время задано, то определяется угол поворота Земли в данный момент времени

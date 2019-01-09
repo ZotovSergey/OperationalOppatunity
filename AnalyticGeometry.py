@@ -33,7 +33,7 @@ class Vector:
         self.y = y
         self.z = z
 
-    def __len__(self):
+    def __abs__(self):
         """
         @Описание
             Вычисление длины моделируемого вектора
@@ -104,7 +104,7 @@ class Vector:
             Вычисления нормированного на единицу вектора
         :return: моделируемый вектор, нормированный на единицу
         """
-        length = len(self)
+        length = abs(self)
         return Vector(self.x / length, self.y / length, self.z / length)
 
     def to_rotate_vector(self, axis_of_rotation, angle_of_rotation):
@@ -269,20 +269,17 @@ class Plane:
     def to_make_plane_by_lines(line1, line2):
         """
         @Описание
-            Метод вычисляет уравнение плоскости по двум не секущимся прямым, принадлежащим этой плоскости и создает
-                объект Plane, соответствующий вычисленной плоскости. Если прямые секущии, то возвращается None
+            Метод вычисляет уравнение плоскости по двум прямым, принадлежащим этой плоскости и создает
+                объект Plane, соответствующий вычисленной плоскости. Если прямые секущии, то результат может быть
+                непредсказуемым
         :param line1: первая прямая, принадлежащая искомой плоскости (объект Line)
         :param line2: вторая прямая, принадлежащая искомой плоскости (объект Line)
         :return:
         """
-        if line1.directing_vector.triple_product(line2.directing_vector,
-                                                 line1.point_on_line - line2.point_on_line) == 0:
-            point1 = line1.point
-            point2 = line1.get_point_on_line(1)
-            point3 = line2.point
-            return Plane.to_make_plane_by_points(point1, point2, point3)
-        else:
-            return None
+        point1 = line1.point_on_line
+        point2 = line1.get_point_on_line(1)
+        point3 = line2.point_on_line
+        return Plane.to_make_plane_by_points(point1, point2, point3)
 
 
 class CanonicalEllipsoid:
@@ -314,16 +311,17 @@ class RotationMatrix:
 
     @Аргументы:
         axis_of_rotation - ось вращения, заданная направляющим вектором (объектом Vector)
-        angle_of_rotation - угол вращения (градусы)
+        angle_of_rotation - угол вращения (радианы)
 
     @Поля класса:
         rotation_matrix - матрица 3x3 (numpy) - матрица поворота в трехмерном пространстве вокруг оси, заданной вектором
             axis_of_rotation на угол angle_of_rotation. Коэффициенты матрицы вычисляются при инициализации
     """
     def __init__(self, axis_of_rotation, angle_of_rotation):
-        angle_of_rotation_in_rad = numpy.deg2rad(angle_of_rotation)
-        sin_of_angle = math.sin(angle_of_rotation_in_rad)
-        cos_of_angle = math.cos(angle_of_rotation_in_rad)
+        axis_of_rotation = axis_of_rotation.get_normalized_vector()
+
+        sin_of_angle = math.sin(angle_of_rotation)
+        cos_of_angle = math.cos(angle_of_rotation)
 
         matrix_coef11 = cos_of_angle + (1 - cos_of_angle) * axis_of_rotation.x * axis_of_rotation.x
         matrix_coef12 = (1 - cos_of_angle) * axis_of_rotation.x * axis_of_rotation.y - sin_of_angle * axis_of_rotation.z
@@ -373,7 +371,7 @@ def point_of_intersection_of_line_and_plane(line, plane):
     if scalar_product_of_line_and_plane_normal != 0:
         coef_of_direct_vect_to_intersection = -(plane.normal.x * line.point_on_line.x +
                                                 plane.normal.y * line.point_on_line.y +
-                                                plane.normal.z * line.point_on_line.z + plane.d_coef) /\
+                                                plane.normal.z * line.point_on_line.z + plane.coef_d) /\
                                               scalar_product_of_line_and_plane_normal
         return line.get_point_on_line(coef_of_direct_vect_to_intersection)
     else:
@@ -391,10 +389,13 @@ def projection_of_line_on_plane(projected_line, plane):
     point_of_intersection = point_of_intersection_of_line_and_plane(projected_line, plane)
     # Проверка того, пересекается ли прямая projected_line и плоскость plane
     if point_of_intersection is not None:
-        perpendicular_plane_to_plane_with_projected_line =\
+        plane.normal.x *= 1000000
+        plane.normal.y *= 1000000
+        plane.normal.z *= 1000000
+        perpendicular_plane_to_plane_with_projected_line = \
             Plane.to_make_plane_by_lines(projected_line, Line(point_of_intersection, plane.normal))
     else:
-        perpendicular_plane_to_plane_with_projected_line =\
+        perpendicular_plane_to_plane_with_projected_line = \
             Plane.to_make_plane_by_lines(projected_line, Line(projected_line.point_on_line, plane.normal))
 
     return Line.to_make_line_by_planes(plane, perpendicular_plane_to_plane_with_projected_line)
@@ -417,11 +418,11 @@ def points_of_intersections_of_line_and_canonical_ellipsoid(line, ellipsoid):
                   line.point_on_line.z * line.directing_vector.z / (ellipsoid.axis_c * ellipsoid.axis_c))
     c_coef = (line.point_on_line.x / ellipsoid.axis_a) ** 2 + (line.point_on_line.y / ellipsoid.axis_b) ** 2 \
         + (line.point_on_line.z / ellipsoid.axis_c) ** 2 - 1
-    coef_of_direct_vect_to_intersection1, coef_of_direct_vect_to_intersection2 =\
+    coef_of_direct_vect_to_intersection_1, coef_of_direct_vect_to_intersection_2 = \
         solution_of_quadratic_equation(a_coef, b_coef, c_coef)
 
-    return line.get_point_on_line(coef_of_direct_vect_to_intersection1),\
-        line.get_point_on_line(coef_of_direct_vect_to_intersection2)
+    return line.get_point_on_line(coef_of_direct_vect_to_intersection_1),\
+        line.get_point_on_line(coef_of_direct_vect_to_intersection_2)
 
 
 def to_found_point_of_intersection_of_line_and_canonical_ellipsoid_nearest_to_stating_point_of_line(line, ellipsoid):
@@ -435,17 +436,19 @@ def to_found_point_of_intersection_of_line_and_canonical_ellipsoid_nearest_to_st
         радиус-вектором (объект Vector)
     """
     # Вычисление двух точек пересечения line и ellipsoid
-    point_of_intersection1, point_of_intersection2 = points_of_intersections_of_line_and_canonical_ellipsoid(line,
-                                                                                                             ellipsoid)
+    point_of_intersection_1, point_of_intersection_2 = points_of_intersections_of_line_and_canonical_ellipsoid(
+        line, ellipsoid)
     # Вычисление расстояний от точек пересечения до line.point_on_line
-    dist1 = len(Vector(line.point_on_line.x - point_of_intersection1.x, line.point_on_line.y - point_of_intersection1.y,
-                       line.point_on_line.z - point_of_intersection1.z))
-    dist2 = len(Vector(line.point_on_line.x - point_of_intersection2.x, line.point_on_line.y - point_of_intersection2.y,
-                       line.point_on_line.z - point_of_intersection2.z))
+    dist1 = abs(Vector(line.point_on_line.x - point_of_intersection_1.x,
+                       line.point_on_line.y - point_of_intersection_1.y,
+                       line.point_on_line.z - point_of_intersection_1.z))
+    dist2 = abs(Vector(line.point_on_line.x - point_of_intersection_2.x,
+                       line.point_on_line.y - point_of_intersection_2.y,
+                       line.point_on_line.z - point_of_intersection_2.z))
     if dist2 >= dist1:
-        return point_of_intersection1
+        return point_of_intersection_1
     else:
-        return point_of_intersection2
+        return point_of_intersection_2
 
 
 def plane_touched_canonical_ellipsoid(point, ellipsoid):
