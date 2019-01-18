@@ -332,7 +332,7 @@ class Polygon:
         shape – содержит геометрический объект типа “Polygon” (в терминах из описания shape-формата), прочитанный из
             shape-файла. Записанный геометрический объект определяет границы тестового полигона. При инициализации
             объект в поле записывается значение аргумента shape.
-        polygons_name - название полигона. При инициализации присваивается None. Задается методом to_set_polygons_name.
+        name - название полигона. При инициализации присваивается None. Задается методом to_set_polygons_name.
         segments_list – список, состоящий из объектов класса Segment, где каждый элемент обозначает один из сегментов на
             которые разбит моделируемый полигон. Заполняется при применении метода to_split_polygon.
         polygons_area – площадь моделируемого полигона с некоторой точностью, равна общей площади всех сегментов, на
@@ -383,7 +383,7 @@ class Polygon:
     """
     def __init__(self, shape, polygon_group):
         self.shape = shape
-        self.polygons_name = None
+        self.name = None
         self.segments_list = []
         self.area = 0
         self.own_group = polygon_group
@@ -407,9 +407,9 @@ class Polygon:
         """
         Метод задает название полигона polygons_name.
         :param polygons_name: Название полигона.
-        :return: поле self.polygons_name приравнивается к значению аргумента polygons_name.
+        :return: поле self.name приравнивается к значению аргумента polygons_name.
         """
-        self.polygons_name = polygons_name
+        self.name = polygons_name
 
     def to_split_polygon(self, lat_fineness, long_fineness):
         """
@@ -534,7 +534,7 @@ class Polygon:
         :return: название полигона, географические координаты его центра и его площадь в кв. метрах в виде:
             "Название полигона":	    коорд. центра:	***.*** с. ш.	***.*** в. д.	0 м,	площадь:	***.*** м^2
         """
-        return "".join([str(self.polygons_name), ':\t\tкоорд. центра:\t',
+        return "".join([str(self.name), ':\t\tкоорд. центра:\t',
                         self.center.geo_coordinates.to_str(count_of_numerals_after_point_for_centers, 0),
                         ',\tплощадь:\t', str(round(self.area, count_of_numerals_after_point_for_area)), ' м^2'])
 

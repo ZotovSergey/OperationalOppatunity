@@ -75,8 +75,8 @@ if __name__ == '__main__':
     #   Название задачи
     name = 'Test'
     #   Начальное и конечное время моделирования
-    initial_simulation_time = datetime(2017, 6, 17, 12, 0, 0)
-    final_simulation_time = datetime(2017, 7, 17, 0, 0, 0)
+    initial_simulation_time = datetime(2017, 6, 19, 0, 0, 0)
+    final_simulation_time = datetime(2017, 6, 24, 12, 0, 0)
     #   Шаг изменения модельного времени в секундах
     step = 1
     #   Максимальный зенитный угол Солнца (градусы)
@@ -143,7 +143,6 @@ if __name__ == '__main__':
     # Задается, флажок, определяющий, учитывать ли во время моделирования выполнения задачи частичную облачность
     task.to_set_considering_considering_partial_cloudiness(to_consider_partial_cloudiness)
 
-
     # Моделирование
     task.to_solve_task(unit_report_time,
                        report_address,
@@ -161,60 +160,7 @@ if __name__ == '__main__':
                        report_scanned_area_in_percents,
                        count_of_numbers_after_point_in_area_report)
 
-    # Параметры выходных данных
-    #   Директория, в которую будут записываться выходные данные
-    directory_address = 'D://results//Last Version'
-    #   Единицы измерения времени, в которых будут выводиться ресультаты
-    unit_of_output_time = 'days'
-    #   Количество цифр после запятой в показателях периодичности решений и периодичности пролетов
-    numerals_count_after_point = 2
-    #   Выводить показатели периодчности решений
-    to_get_main_data_about_solutions = True
-    #   Выводить показатели периодчности пролетов
-    to_get_main_data_about_overflights = True
-    #   Выводить зависимость сканированной площади за шаг модельного времени от времени в документах txt, pdf, jpg
-    to_get_graph_information_collection_rate_txt = True
-    to_get_graph_information_collection_rate_pdf = True
-    to_get_graph_information_collection_rate_jpg = True
-    #   Выводить зависимость полной сканированной площади от времени в документах txt, pdf, jpg
-    to_get_graph_information_volume_txt = True
-    to_get_graph_information_volume_pdf = True
-    to_get_graph_information_volume_jpg = True
-    #   Выводить гистограмму периодов решений задачи в документах txt, pdf, jpg
-    to_get_histogram_of_solving_period_txt = True
-    to_get_histogram_of_solving_period_pdf = True
-    to_get_histogram_of_solving_period_jpg = True
-    #   Выводить гистограмму периодов пролетов задачи в документах txt, pdf, jpg
-    to_get_histogram_of_overflight_period_txt = True
-    to_get_histogram_of_overflight_period_pdf = True
-    to_get_histogram_of_overflight_period_jpg = True
-    #   Пропускать периоды, в которые нет наблюдений, для периодов решений и пролетов
-    to_skip_time_out_of_observation_period_in_periods = True
-    #   Пропускать периоды, в которые нет наблюдений, для графиков сканированной площади
-    to_skip_time_out_of_observation_period_in_information_value = True
-    #   Представлять значения на осях времени на графиках просканированной площади в виде единиц измерения времени
-    #       unit_of_output_time
-    time_axis_in_units = True
-    #   Представлять значения на осях площади на графиках просканированной площади в виде процентов от общей площади
-    #       всех полигонов
-    scanned_area_in_percents = True
-    # Вывод результатов
-    task.to_output_data(directory_address, unit_of_output_time, numerals_count_after_point,
-                        to_get_main_data_about_solutions,
-                        to_get_main_data_about_overflights,
-                        to_get_graph_information_collection_rate_txt,
-                        to_get_graph_information_collection_rate_pdf,
-                        to_get_graph_information_collection_rate_jpg,
-                        to_get_graph_information_volume_txt,
-                        to_get_graph_information_volume_pdf,
-                        to_get_graph_information_volume_jpg,
-                        to_get_histogram_of_solving_period_txt,
-                        to_get_histogram_of_solving_period_pdf,
-                        to_get_histogram_of_solving_period_jpg,
-                        to_get_histogram_of_overflight_period_txt,
-                        to_get_histogram_of_overflight_period_pdf,
-                        to_get_histogram_of_overflight_period_jpg,
-                        to_skip_time_out_of_observation_period_in_periods,
-                        to_skip_time_out_of_observation_period_in_information_value,
-                        time_axis_in_units,
-                        scanned_area_in_percents)
+    # Подготовка данных к выводу
+    output_data_maker = task.to_prepare_data_to_output()
+    # Сохранение результатов
+    output_data_maker.to_save_data('test_save', 'D:\\results')

@@ -51,7 +51,7 @@ class SatellitesGroup:
         self.task = None
         self.time_of_scanning = 0
 
-    def to_act(self, next_simulation_time):
+    def to_act(self, next_simulation_time, file):
         """
         @Описание:
             Метод моделирует работу спутниковой группировки, то есть всех спутников, входящих в нее, от текущего
@@ -104,11 +104,18 @@ class SatellitesGroup:
                     # Если да, то
                     #   Моделируется сканирование близких полигонов и прибовляет их просканированную площадь к общей
                     #       просканированной площади группы
-                    common_scanned_area += satellite.to_scan()
+                    common_scanned_area += satellite.to_scan(file)
         # Если сканирование закончилось, то обнуляется время сеанса
         else:
+            # Если нет то
+            #   очищается поле просканированной территории для каждого спутника
+            for satellite in self.satellites_list:
+                if len(satellite.scanned_territory_for_last_step) > 0:
+                    satellite.scanned_territory_for_last_step = []
+            #   возвращается 0
             if self.time_of_scanning > 0:
                 self.time_of_scanning = 0
+
         # Обновление модельного времени для группы
         self.simulation_time = next_simulation_time
         return common_scanned_area
@@ -237,7 +244,7 @@ class Satellite:
         self.scanned_territory_for_last_step = []
         self.close_polygons = []
 
-    def to_act(self, next_simulation_time):
+    def to_act(self, next_simulation_time, file):
         """
         @Описание:
             Метод моделирует работу спутника от текущего модельного времени группы
@@ -262,7 +269,7 @@ class Satellite:
             #   Моделирование полосы захвата (по прямой линии между точками на орбите)
             self.to_determine_scan_area(current_coordinates_set, next_coordinates_set)
             #   Моделируется сканирование близких полигонов и возвращается площадь
-            return self.to_scan()
+            return self.to_scan(file)
         else:
             # Если нет то
             #   очищается поле просканированной территории
@@ -405,7 +412,7 @@ class Satellite:
                 close_polygons.append(polygon)
         self.close_polygons = close_polygons
 
-    def to_scan(self):
+    def to_scan(self, file):
         """
         @Описание:
             Метод моделирует процесс съемки близких полигонов self.close_polygons) за некоторое время. Производится
@@ -420,6 +427,10 @@ class Satellite:
         :return: площадь просканированной территории (кв. м)
         """
         # Преобразование списка геокоординат self.scanned_territory_for_last_step в объект geometry.Polygon
+        #####
+        file.write(str(self.satellite_coordinates_set.geo_coordinates.long) + '\t' + str(self.satellite_coordinates_set.geo_coordinates.lat) + '\t')
+        file.write(str(self.scanned_territory_for_last_step[0].long) + '\t' + str(self.scanned_territory_for_last_step[0].lat) + '\t')
+        file.write(str(self.scanned_territory_for_last_step[0].long) + '\t' + str(self.scanned_territory_for_last_step[0].lat) + '\n')
         scanned_polygon = geometry.Polygon([
             (self.scanned_territory_for_last_step[0].long, self.scanned_territory_for_last_step[0].lat),
             (self.scanned_territory_for_last_step[1].long, self.scanned_territory_for_last_step[1].lat),

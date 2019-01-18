@@ -1,10 +1,10 @@
 import math
 import statistics
-import matplotlib.pyplot as plt
-from DateManagement import to_determine_date_by_days_number_in_not_leap_year, to_determine_days_number_in_not_leap_year
-from TimeManagment import to_get_unit_in_seconds, seconds_to_unit, unit_in_symbol
 from datetime import timedelta
 from calendar import isleap
+from DateManagement import to_determine_date_by_days_number_in_not_leap_year, to_determine_days_number_in_not_leap_year
+from TimeManagment import to_get_unit_in_seconds, seconds_to_unit, unit_in_symbol
+import OutputDataMaker
 
 DEFAULT_MAX_ZENITH_ANGLE = 360
 DEFAULT_MAX_CLOUD_SCORE = math.inf
@@ -67,28 +67,16 @@ class Task:
             ячейке сответствует время из списка self.time_of_growth_of_information. При этом в список не записываются
             нулевые значения. Список заполняется при выполнении метода to_solve_task. По умолчанию пустой список [].
         time_of_growth_of_information - список. В каждую ячейку записывается время UTC (datetime), соответствующее
-            времени сканиирования площади из соответствующего элемента списка growth_of_information. Список заполняется
-            при выполнении метода to_solve_task. По умолчанию пустой список [].
-        time_of_solutions - Список. В каждом элементе записывается модельное время, в которое была выполнена задача
-            (double). Список заполняется при выполнении метода to_solve_task. По умолчанию пустой список [].
+            времени сканиирования площади из соответствующего элемента списка self.growth_of_information. Список
+            заполняется при выполнении метода to_solve_task. По умолчанию пустой список [].
+        time_of_solutions - список. В каждом элементе записывается модельное время, в которое была выполнена задача
+            (datetime). Список заполняется при выполнении метода to_solve_task. По умолчанию пустой список [].
 
     @Методы:
         to_solve_task - моделирует выполнение задачи, собирает данные, по которым определяются показатели периодичности
             решений задачи и пролетов спутников self.satellite_group над полигонами self.polygons_group. Также выводит
             отчеты о состоянии системы self.satellite_group, вычисляемых показателяй периодичности, о просканированной
             территории группы полигонов self.polygons_group
-        to_output_data - преобразует данные, собранные методом to_solve_task в:
-                среднее, медианное, максимальное, минимальное значениее времени выполнения задачи, дисперсию и
-                среднеквадратическое отклонение (далее основные оказатели) и выводит в виде докумена txt;
-                гистограмму распределения времении выполнения задачи и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, png;
-                основные показатели периодичности пролётов спутников над полигонами и выводит в виде докумена txt;
-                гистограмму распределения периода пролётов спутников над полигонами и выводит в текстовом виде в
-                    документе txt, в графичечском видиде в документе pdf, png;
-                график прироста просканированной территории (в м^2 или в %) за выбранный период времени и выводит в
-                    текстовом виде в документе txt, в графичечском виде в документе pdf, png;
-                график просканированной территории (в м^2 или в %)  и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, png.
         to_set_name - задает название задачи. Записывает его в поле self.name.
         to_set_satellites_group - задаёт спутниковую группировку, которая будет выполнять задачу, в виде объекта
             SatelliteGroup. Записывает его в поле self.satelliteGroup.
@@ -112,24 +100,11 @@ class Task:
         to_make_report - составляет отчет о координатах спутников группы self.satellite_group, о решениях задачи, о
             пролетах спутников над полигонами self.polygons_group, о площади просканированнной территории полигонов с
             некоторой заданной периодичностью модельного времени.
-        to_define_initial_times_of_scan_session - определяет модельное время всех пролётов на данный момент (начала
-        сессии скаирования).
-        to_get_main_data_about_periods - возвращает некоторые основные показатели периодчности по заданным периодам
-            времени в заданых едидниицах измерения времени. Среди выходных параметров: среднее, медианное, максимальное,
-            минимальное значение, дисперсия и среднеквадратическое отклонение, а также общее количество значений за
-            заданное время наблюдения в заданных единицах измерения времени.
-        to_determine_median_average_max_min_dispersion_standard - по списку чисел вычисляет их среднее, медианное,
-            максимальное, минимальное значение, их дисперсию и среднеквадратическое отклонение.
-        to_get_information_about_task - возвращает некоторые данные о выполняемой задаче - о объекте self - в виде
-            строки.
-        to_identify_periods_sec - определяет время от времени начала наблюдения до первого значения времени из заданного
-            списка и между соседними значениями времени из заданного списка в секундлах.
-        to_make_axis - принимает список чисел и список соответствующих им значений времени. Числа группируются по
-            времени с шагом в одну заданную единицу измерения времени и суммируются. На выход подается список сумм чисел
-            и список значений времени, соответсвующих суммам (началу отсчета времени для группы) или отсчеты заданных
-            единиц измерения времени от первого - нулевого значения.
-        to_sum_values_on_axis - суммирование каждого значения заданного списка со всеми прдыдущими (интегрирование).
-        to_make_histogram - создает гистограмму из списка значений с шагом в одну заданную единицу измерения времени.
+        to_get_information_about_output_data - возвращает строку, содержащую данные о выполненой задачи и о выходных
+            данных. Эта строка вставляется в файлы, которые создает  сохраняет OutputDataMaker.
+        to_prepare_data_to_output - возвращает объект OutputDataMaker, в который записаны данные о задаче, о времени
+            выполнения задачи, о пролетах и о площади просканированной территории. С помощью этого объекта выводятся
+            данные о выполнении задачи, о пролетах и др. в требуемом виде.
     """
 
     def __init__(self):
@@ -223,6 +198,8 @@ class Task:
             self.time_of_solutions - время, когда была решена поставленная задача с точность self.step (datetime).
             Также в консоль и в файл report_address выводятся отчеты (вид отчета см. описание метода to_make_report).
         """
+        #####
+        file = open('D:\\results\\file.txt', 'w')
         # Задание в качестве модельного времени для спутниковой группировки self.SatelliteGroup начального модельного
         #   времени и вычисление координатспутников группировки в это время
         self.satellites_group.to_set_simulation_time(self.initial_simulation_time)
@@ -272,7 +249,7 @@ class Task:
                 #   Моделирование работы спутников из self.SatelliteGroup на следующие self.step секунд. Возвращается
                 #       площадь (кв. м) просканированной площади self.PolygonsGroup, меняется текущее модельное время на
                 #       next_simulation_time
-                scanned_area = self.satellites_group.to_act(next_simulation_time)
+                scanned_area = self.satellites_group.to_act(next_simulation_time, file)
                 #   Изменение времени от последнего отчета
                 time_from_report_last += self.step
                 #   Если просканированная площадь не нулевая...
@@ -346,377 +323,26 @@ class Task:
                         time_from_report_last % report_time_sec
                 # Присвоение нового текущего модельного времени
                 self.satellites_group.simulation_time = new_simulation_time
-        # Файл с отчетами закрывается, если был открыт
+        # Делается последний отчет о моделирований, и файл с отчетами закрывается, если он был открыт
         if report_address is not None:
+            self.to_output_report(report_file,
+                                  report_time_from_initial_time,
+                                  unit_report_time,
+                                  report_data_about_satellites,
+                                  count_of_numerals_after_point_in_geo_coordinates,
+                                  count_of_numerals_after_point_in_altitude,
+                                  count_of_numerals_after_point_in_velocity,
+                                  report_main_data_about_solutions,
+                                  report_main_data_about_overflights,
+                                  time_unit_of_report,
+                                  numerals_count_after_point_in_solutions_and_overflights_report,
+                                  to_skip_time_out_of_observation_period,
+                                  report_data_about_scanned_area,
+                                  report_scanned_area_in_percents,
+                                  count_of_numbers_after_point_in_area_report)
             report_file.close()
-
-    def to_output_data(self, directory_address, unit_of_output_time, numerals_count_after_point,
-                       to_get_main_data_about_solutions=False,
-                       to_get_main_data_about_overflights=False,
-                       to_get_graph_information_collection_rate_txt=False,
-                       to_get_graph_information_collection_rate_pdf=False,
-                       to_get_graph_information_collection_rate_png=False,
-                       to_get_graph_information_volume_txt=False,
-                       to_get_graph_information_volume_pdf=False,
-                       to_get_graph_information_volume_png=False,
-                       to_get_histogram_of_solving_period_txt=False,
-                       to_get_histogram_of_solving_period_pdf=False,
-                       to_get_histogram_of_solving_period_png=False,
-                       to_get_histogram_of_overflight_period_txt=False,
-                       to_get_histogram_of_overflight_period_pdf=False,
-                       to_get_histogram_of_overflight_period_png=False,
-                       to_skip_time_out_of_observation_period_in_periods=False,
-                       to_skip_time_out_of_observation_period_in_information_value=False,
-                       time_axis_in_units=False,
-                       scanned_area_in_percents=False):
-        """
-        @Описание:
-            Метод преобразует данные, собранные методом to_solve_task в:
-                среднее, медианное, максимальное, минимальное значениее времени выполнения задачи, дисперсию и
-                среднеквадратическое отклонение (далее основные оказатели) и выводит в виде докумена txt;
-                гистограмму распределения времении выполнения задачи и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, png;
-                основные показатели периодичности пролётов спутников над полигонами и выводит в виде докумена txt;
-                гистограмму распределения периода пролётов спутников над полигонами и выводит в текстовом виде в
-                    документе txt, в графичечском видиде в документе pdf, png;
-                график прироста просканированной территории (в м^2 или в %) за выбранный период времени и выводит в
-                    текстовом виде в документе txt, в графичечском виде в документе pdf, png;
-                график просканированной территории (в м^2 или в %)  и выводит в текстовом виде в документе txt, в
-                    графичечском виде в документе pdf, png.
-        :param directory_address: адрес директории, в которую сохраняются выходные данные
-        :param unit_of_output_time: единицы измерения времени (см. TimeManagement), в которых будут выводиться выходные,
-            связанные со временем.
-        :param numerals_count_after_point: количество символов после запятой  для выводимых данных о времени решений
-            задачи и периодах между пролетами.
-        :param to_get_main_data_about_solutions: вывести осноные данные о времени решений в единицах измерения
-            unit_of_output_time, с точностью до numerals_count_after_point знаков после запятой в файл txt (если True,
-            если False, то не выводить). По умолчанию False.
-        :param to_get_main_data_about_overflights: вывести осноные данные о периоде пролетов спутников из
-            self.SatelliteGroup над полигонами self.PolygonsGroup в единицах измерения unit_of_output_time, с точностью
-            до numerals_count_after_point знаков после запятой в файл txt (если True, если False, то не выводить). По
-            умолчанию False.
-        :param to_get_graph_information_collection_rate_txt: вывести зависимость площади просканированной территории за
-            текущий шаг времени от времени в виде таблицы в файл txt (если True, если False, то не выводить). По
-            умолчанию False.
-        :param to_get_graph_information_collection_rate_pdf: вывести зависимость площади просканированной территории за
-            текущий шаг времени от времени в виде графика в файл pdf (если True, если False, то не выводить). По
-            умолчанию False.
-        :param to_get_graph_information_collection_rate_png: вывести зависимость площади просканированной территории за
-            текущий шаг времени от времени в виде графика в файл png (если True, если False, то не выводить). По
-            умолчанию False.
-        :param to_get_graph_information_volume_txt: вывести зависимость площади просканированной территории от времени в
-            виде таблицы в файл txt (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_graph_information_volume_pdf: вывести зависимость площади просканированной территории от времени в
-            виде графика в файл pdf (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_graph_information_volume_png: вывести зависимость площади просканированной территории от времени в
-            виде графика в файл png (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_solving_period_txt: вывести время выполнения задачи в виде гистограммы в файл txt
-            (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_solving_period_pdf: вывести время выполнения задачи в виде гистограммы в файл pdf
-            (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_solving_period_png: вывести время выполнения задачи в виде гистограммы в файл png
-            (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_overflight_period_txt: вывести время между пролетамми спутников над полигонами в виде
-            гистограммы в файл txt (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_overflight_period_pdf: вывести время между пролетамми спутников над полигонами в виде
-            гистограммы в файл pdf (если True, если False, то не выводить). По умолчанию False.
-        :param to_get_histogram_of_overflight_period_png: вывести время между пролетамми спутников над полигонами в виде
-            гистограммы в файл png (если True, если False, то не выводить). По умолчанию False.
-        :param to_skip_time_out_of_observation_period_in_periods: не учитывать во времени выполнения задачи и времени
-            между пролетами спутников периоды, в которые не проводится наблюдение (время вне периода годового
-            наблюдения) (если True, если False, то учитывать). По умолчанию False.
-        :param to_skip_time_out_of_observation_period_in_information_value: пропускать в данных о просканированной
-            площади полигонов периоды, в которые не проводится наблюдение (время вне периода годового наблюдения) (если
-            True, если False, то не пропускать). По умолчанию False.
-        :param time_axis_in_units: выводить графики площадей просканированной территории от времени с осями времени в
-            единицах измерения времени unit_of_output_time и с отсчетом от нуля, где ноль - налальное модельное время
-            (self.initial_simulation_time) (если True, если False, то ось в модельном времени UTC). По умолчанию False.
-        :param scanned_area_in_percents: выводить графики площадей просканированной территории от времени с осями
-            площадей в процентах площади просканированной территории от полной площади полигонов self.PolygonsGroup
-            (если True, если False, то ось кв. метрах). По умолчанию False.
-        :return: сохраняет в директрию directory_address ... - см. описание
-        """
-        # Будет ли выводиться зависимость просканированной площади за шаг времени от времени в каком-либо виде
-        if to_get_graph_information_collection_rate_txt or \
-                to_get_graph_information_collection_rate_pdf or \
-                to_get_graph_information_collection_rate_png:
-            to_get_graph_information_collection_rate = True
-        else:
-            to_get_graph_information_collection_rate = False
-        # Будет ли выводиться зависимость просканированной площади от времени в каком-либо виде
-        if to_get_graph_information_volume_txt or \
-                to_get_graph_information_volume_pdf or \
-                to_get_graph_information_volume_png:
-            to_get_graph_information_volume = True
-        else:
-            to_get_graph_information_volume = False
-        # Будет ли выводиться гистограмма времени между решениями в каком-либо виде
-        if to_get_histogram_of_solving_period_txt or \
-                to_get_histogram_of_solving_period_pdf or \
-                to_get_histogram_of_solving_period_png:
-            to_get_histogram_of_solving_period = True
-        else:
-            to_get_histogram_of_solving_period = False
-        # Будет ли выводиться гистограмма времени между пролетами спутников над полигонами в каком-либо виде
-        if to_get_histogram_of_overflight_period_txt or \
-                to_get_histogram_of_overflight_period_pdf or \
-                to_get_histogram_of_overflight_period_png:
-            to_get_histogram_of_overflight_period = True
-        else:
-            to_get_histogram_of_overflight_period = False
-        # Если на осях времени в графиках отображаются единицы измерения времени, в которых будет выводиться информация
-        #   о времени, то задается символ единицы измеерения, если нет, то вместо символа - обозначение формата времени
-        #   "yyyy-MM-dd hh:mm:ss"
-        if time_axis_in_units:
-            unit_symbol = unit_in_symbol(unit_of_output_time)
-        else:
-            unit_symbol = "time"
-        # Вычисление периодов между решениями задачи по списку времени выполнения self.time_of_solutions
-        periods_of_solutions = []
-        if to_get_main_data_about_solutions or to_get_histogram_of_solving_period:
-            periods_of_solutions = self.to_identify_periods_sec(self.time_of_solutions, self.initial_simulation_time,
-                                                                to_skip_time_out_of_observation_period_in_periods)
-        # Вычисление периодов между пролетами спутников над исследуемыми полигонами по списку времени сканирования
-        #   self.time_of_growth_of_information
-        periods_of_overflight = []
-        if (to_get_main_data_about_overflights or to_get_histogram_of_overflight_period) and \
-                self.time_of_growth_of_information is not []:
-            time_of_growth_of_information = self.time_of_growth_of_information
-            time_of_overflights = []
-            # Вычисление времен появления спутников над полигонами и начала сканирования и запись этого времени в список
-            #   time_of_overflights
-            initial_time_of_overflight = time_of_growth_of_information[0]
-            for i in range(1, len(time_of_growth_of_information)):
-                if (time_of_growth_of_information[i] - time_of_growth_of_information[i - 1]).total_seconds() > \
-                        self.step:
-                    time_of_overflights.append(initial_time_of_overflight)
-                    initial_time_of_overflight = time_of_growth_of_information[i]
-            time_of_overflights.append(initial_time_of_overflight)
-            # Вычсление периодов
-            periods_of_overflight = self.to_identify_periods_sec(time_of_overflights, self.initial_simulation_time,
-                                                                 to_skip_time_out_of_observation_period_in_periods)
-        # Если выводятся основные показатели периодичности решений или пролетов...
-        if to_get_main_data_about_solutions or to_get_main_data_about_overflights:
-            # Вычисление полного модельного времени (времени моделирования)
-            overall_time_of_simulation_sec = seconds_to_unit((self.final_simulation_time -
-                                                              self.initial_simulation_time).total_seconds(),
-                                                             unit_of_output_time)
-            # Вывод основный данных о времени между решениями в файл txt, если это требуется, в виде:
-            #   Основные показатели периодичности выполнения задачи 'название задачи'
-            #       Средний период:         '**.**' 'u'
-            #       Медианный период:       '**.**' 'u'
-            #       Максимальный период:    '**.**' 'u'
-            #       Минимальный период:     '**.**' 'u'
-            #       Дисперсия:              '**.**' 'u'
-            #       Среднее кв. отклнение:  '**.**' 'u'
-            #       Всего за время моделирования - '**.**' 'u' - было сделано '**' измерений
-            if to_get_main_data_about_solutions:
-                main_data_solutions_file = open("".join([directory_address, '/', self.name,
-                                                         ' - основные показатели периодичности выполнения задачи (',
-                                                         unit_symbol, ').txt']), 'w')
-                main_data_solutions_file.write("".join(['Основные показатели периодичности выполнения задачи ',
-                                                        str(self.name), '\n', self.to_get_information_about_task(),
-                                                        self.to_get_main_data_about_periods
-                                                        (periods_of_solutions, unit_of_output_time,
-                                                         numerals_count_after_point, overall_time_of_simulation_sec)]))
-                main_data_solutions_file.close()
-            # Вывод основный данных о времени между пролетами в файл txt, если это требуется, в виде:
-            #   Основные показатели периодичности пролетов спутника 'название задачи'
-            #       Средний период:         '**.**' 'u'
-            #       Медианный период:       '**.**' 'u'
-            #       Максимальный период:    '**.**' 'u'
-            #       Минимальный период:     '**.**' 'u'
-            #       Дисперсия:              '**.**' 'u'
-            #       Среднее кв. отклнение:  '**.**' 'u'
-            #       Всего за время моделирования - '**.**' 'u' - было сделано '**' измерений
-            if to_get_main_data_about_overflights:
-                main_data_overflights_file = open("".join([directory_address, '/', self.name,
-                                                           ' - основные показатели периодичности пролетов спутников (',
-                                                           unit_symbol, ').txt']), 'w')
-                main_data_overflights_file.write("".join(['Основные показатели периодичности пролетов спутника ',
-                                                          str(self.name), '\n\n', self.to_get_information_about_task(),
-                                                          self.to_get_main_data_about_periods
-                                                          (periods_of_overflight,
-                                                           unit_of_output_time,
-                                                           numerals_count_after_point,
-                                                           overall_time_of_simulation_sec)]))
-                main_data_overflights_file.close()
-        # Если выводится график площади за шаг от времени или график просканированной площади за все время от времени...
-        if to_get_graph_information_collection_rate or to_get_graph_information_volume:
-            # Если площадь выводится в процентах от общей площади исследуеммых полигонов, то список
-            #   self.growth_of_information переводится в проценты, а символом в представлениях данных становится '% '
-            if scanned_area_in_percents:
-                symbol_of_units_of_information = '%'
-                growth_of_information = []
-                for value in self.growth_of_information:
-                    growth_of_information.append(value / self.polygons_group.full_area)
-            else:
-                # Если нет, то символом становится 'кв. м'
-                symbol_of_units_of_information = 'кв. м'
-                growth_of_information = self.growth_of_information
-            # Составление осей графика площади за шаг от времени
-            information_collection_rate_axis, time_axis = self.to_make_axis(
-                growth_of_information,
-                self.time_of_growth_of_information,
-                to_skip_time_out_of_observation_period_in_information_value,
-                unit_of_output_time,
-                time_axis_in_units)
-            # Если зависимость выводится в каком-либо виде...
-            if to_get_graph_information_collection_rate:
-                # Подготовка заголовков
-                graph_title = "".join(['График притока информации (', symbol_of_units_of_information, ') от времени (',
-                                       unit_symbol, ')'])
-                graph_address = "".join([directory_address, '/', self.name, ' - график притока информации (',
-                                         symbol_of_units_of_information, ') от времени (', unit_symbol, ')'])
-                # Вывод зависимости в виде таблицы в файле txt, если требуется
-                if to_get_graph_information_collection_rate_txt:
-                    table_information_volume_file = open("".join([graph_address, '.txt']), 'w')
-
-                    table_information_volume_file.write("".join([graph_title, '\n\n',
-                                                                 self.to_get_information_about_task(), unit_symbol,
-                                                                 '\t\t\t\t', symbol_of_units_of_information, '\n']))
-                    for i in range(0, len(information_collection_rate_axis)):
-                        table_information_volume_file.write("".join([str(time_axis[i]), '\t\t',
-                                                                     str(information_collection_rate_axis[i]), '\n']))
-                # Если предполагается вывод зависимости в виде графиков, то график строится с заголовком и названием
-                #   осей
-                if to_get_graph_information_collection_rate_png or to_get_graph_information_collection_rate_pdf:
-                    graph_information_collection_rate = plt.figure()
-                    plt.plot(time_axis, information_collection_rate_axis, color='blue')
-                    plt.axis([time_axis[0], time_axis[-1], information_collection_rate_axis[0],
-                              information_collection_rate_axis[-1] + 1])
-                    plt.title(graph_title)
-                    plt.ylabel("".join(['Информация (', symbol_of_units_of_information, ')']))
-                    plt.xlabel("".join(['Время (', unit_symbol, ')']))
-                    plt.grid(True)
-                    plt.rcParams['pdf.fonttype'] = 42
-                    plt.rcParams['font.family'] = 'Calibri'
-                    if not time_axis_in_units:
-                        for label in graph_information_collection_rate.add_subplot(111).xaxis.get_ticklabels():
-                            # label - это экземпляр текста Text
-                            label.set_rotation(-10)
-                    # Вывод зависимости в виде графика в файле png, если требуется
-                    if to_get_graph_information_collection_rate_png:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.png']))
-                    # Вывод зависимости в виде графика в файле pdf, если требуется
-                    if to_get_graph_information_collection_rate_pdf:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.pdf']))
-                    plt.close()
-            # Если зависимость площади сканированной территории выводится в каком-либо виде
-            if to_get_graph_information_volume:
-                # Интегрируются значение зависимости просканированной площади за шаг от времени и получается зависимость
-                #    общей площади от того же времени
-                information_volume_axis = self.to_sum_values_on_axis(information_collection_rate_axis)
-                # Подготовка заголовков
-                graph_title = "".join(['График собранной информации (', symbol_of_units_of_information,
-                                       ') от времени (', unit_symbol, ')'])
-                graph_address = "".join([directory_address, '/', self.name, ' - график собранной информации (',
-                                         symbol_of_units_of_information, ') от времени (', unit_symbol, ')'])
-                # Вывод зависимости в виде таблицы в файле txt, если требуется
-                if to_get_graph_information_collection_rate_txt:
-                    table_information_volume_file = open("".join([graph_address, '.txt']), 'w')
-
-                    table_information_volume_file.write("".join([graph_title, '\n\n',
-                                                                 self.to_get_information_about_task(), unit_symbol,
-                                                                 '\t\t\t\t', symbol_of_units_of_information, '\n']))
-                    for i in range(0, len(information_volume_axis)):
-                        table_information_volume_file.write("".join([str(time_axis[i]), '\t\t',
-                                                                     str(information_volume_axis[i]), '\n']))
-                # Если предполагается вывод зависимости в виде графиков, то график строится с заголовком и названием
-                #   осей
-                if to_get_graph_information_collection_rate_png or to_get_graph_information_collection_rate_pdf:
-                    graph_information_collection_rate = plt.figure()
-                    plt.plot(time_axis, information_volume_axis, color='purple')
-                    plt.axis([time_axis[0], time_axis[-1], information_volume_axis[0],
-                              information_volume_axis[-1] + 1])
-
-                    plt.title(graph_title)
-                    plt.ylabel("".join(['Информация (', symbol_of_units_of_information, ')']))
-                    plt.xlabel("".join(['Время (', unit_symbol, ')']))
-                    plt.grid(True)
-                    # Вывод зависимости в виде графика в файле png, если требуется
-                    if to_get_graph_information_collection_rate_png:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.png']))
-                    # Вывод зависимости в виде графика в файле pdf, если требуется
-                    if to_get_graph_information_collection_rate_pdf:
-                        graph_information_collection_rate.savefig("".join([graph_address, '.pdf']))
-                    plt.close()
-        # Если выводится гистограмма периодов решений задачи в каком-либо виде
-        if to_get_histogram_of_solving_period:
-            # Построение гистограммы периодов решений
-            histogram_of_solving_periods = self.to_make_histogram(periods_of_solutions, unit_of_output_time)
-            # Подготовка заголовков и подписей осей
-            histogram_title = "".join(['Гистограмма распределения решений (', unit_symbol, ')'])
-            histogram_address = "".join([directory_address, '/', self.name, ' - гистограмма распределения решений (',
-                                         unit_symbol, ')'])
-            x_label = "".join(['Период выполнения задачи (', unit_symbol, ')'])
-            y_label = 'Количество решений'
-            # Вывод гистограммы в файле txt, если требуется
-            if to_get_histogram_of_solving_period_txt:
-                histogram_of_solutions_file = open("".join([histogram_address, '.txt']), 'w')
-
-                histogram_of_solutions_file.write("".join([histogram_title, '\n\n',
-                                                           self.to_get_information_about_task(), x_label, '\t',
-                                                           y_label, '\n']))
-                for i in range(0, len(histogram_of_solving_periods)):
-                    histogram_of_solutions_file.write("".join([str(i), '\t\t\t\t', str(histogram_of_solving_periods[i]),
-                                                               '\n']))
-                histogram_of_solutions_file.close()
-            # Если гистограмма выводится в графическом виде
-            if to_get_histogram_of_solving_period_png or to_get_histogram_of_solving_period_pdf:
-                # Построение гистограммы в графическом виде
-                hist_of_solving_periods = plt.figure()
-                plt.hist(histogram_of_solving_periods, color='red')
-                plt.axis([0, len(histogram_of_solving_periods) + 1, 0, max(histogram_of_solving_periods) + 1])
-                plt.title(histogram_title)
-                plt.xlabel(x_label)
-                plt.ylabel(y_label)
-                # Вывод гистограммы в файле png, если требуется
-                if to_get_histogram_of_solving_period_png:
-                    hist_of_solving_periods.savefig("".join([histogram_address, '.png']))
-                # Вывод гистограммы в файле pdf, если требуется
-                if to_get_histogram_of_solving_period_pdf:
-                    hist_of_solving_periods.savefig("".join([histogram_address, '.pdf']))
-                plt.close()
-        # Если выводится гистограмма периодов пролетов спутников над полигонами в каком-либо виде
-        if to_get_histogram_of_overflight_period:
-            # Построение гистограммы периодов решений
-            histogram_of_overflight_periods = self.to_make_histogram(periods_of_overflight, unit_of_output_time)
-            # Подготовка заголовков и подписей осей
-            histogram_title = "".join(['Гистограмма распределения пролетов (', unit_symbol, ')'])
-            histogram_address = "".join([directory_address, '/', self.name, ' - гистограмма распределения пролетов (',
-                                         unit_symbol, ')'])
-            x_label = "".join(['Период пролетов (', unit_symbol, ')'])
-            y_label = 'Количество пролетов'
-            # Вывод гистограммы в файле txt, если требуется
-            if to_get_histogram_of_overflight_period_txt:
-                histogram_of_overflight_file = open("".join([histogram_address, '.txt']), 'w')
-
-                histogram_of_overflight_file.write("".join([histogram_title, '\n\n',
-                                                            self.to_get_information_about_task(), x_label, '\t\t',
-                                                            y_label, '\n']))
-
-                for i in range(0, len(histogram_of_overflight_periods)):
-                    histogram_of_overflight_file.write("".join([str(i), '\t\t\t\t',
-                                                                str(histogram_of_overflight_periods[i]), '\n']))
-
-                histogram_of_overflight_file.close()
-            # Если гистограмма выводится в графическом виде
-            if to_get_histogram_of_overflight_period_png or to_get_histogram_of_overflight_period_pdf:
-                hist_of_overflight_periods = plt.figure()
-                plt.hist(histogram_of_overflight_periods, color='green')
-                plt.axis([0, len(histogram_of_overflight_periods) + 1, 0, max(histogram_of_overflight_periods) + 1])
-
-                plt.title(histogram_title)
-                plt.xlabel("".join(['Период пролетов (', unit_symbol, ')']))
-                plt.ylabel('Количество пролетов')
-                # Вывод гистограммы в файле png, если требуется
-                if to_get_histogram_of_solving_period_png:
-                    hist_of_overflight_periods.savefig("".join([histogram_address, '.png']))
-                # Вывод гистограммы в файле pdf, если требуется
-                if to_get_histogram_of_solving_period_pdf:
-                    hist_of_overflight_periods.savefig("".join([histogram_address, '.pdf']))
-                plt.close()
+            #####
+            file.close()
 
     def to_set_name(self, name):
         """
@@ -1133,13 +759,15 @@ class Task:
             # Отчет о решении задачи на текущий момент модельного времени
             if data_about_solutions:
                 # Вычисление периодов между соседними решениями задачи (или от начального модельного времени)
-                periods_of_solutions = self.to_identify_periods_sec(self.time_of_solutions,
-                                                                    self.initial_simulation_time,
-                                                                    to_skip_time_out_of_observation_period)
+                periods_of_solutions = to_identify_periods_sec(self.time_of_solutions,
+                                                               self.initial_simulation_time,
+                                                               self.initial_annual_observation_period,
+                                                               self.final_annual_observation_period,
+                                                               to_skip_time_out_of_observation_period)
                 # Запись данных о решениях и о их времени
                 str_solutions_report = \
                     "".join(['Основные показатели периодичности решений на текущий момент:\n',
-                             self.to_get_main_data_about_periods(
+                             to_get_main_data_about_periods(
                                  periods_of_solutions,
                                  time_unit,
                                  numerals_count_after_point_in_solutions_and_overflights_report,
@@ -1151,15 +779,18 @@ class Task:
             #   модельного времени
             if data_about_overflights:
                 # Вычисление модельного времени пролетов (начала сеансов сканирования)
-                time_of_overflights = self.to_define_initial_times_of_scan_session()
+                time_of_overflights = to_define_initial_times_of_scan_session(self.time_of_growth_of_information,
+                                                                              self.step)
                 # Вычисление периодов между соседними пролетами (или от начального модельного времени)
-                periods_of_overflight = self.to_identify_periods_sec(time_of_overflights,
-                                                                     self.initial_simulation_time,
-                                                                     to_skip_time_out_of_observation_period)
+                periods_of_overflight = to_identify_periods_sec(time_of_overflights,
+                                                                self.initial_simulation_time,
+                                                                self.initial_annual_observation_period,
+                                                                self.final_annual_observation_period,
+                                                                to_skip_time_out_of_observation_period)
                 # Запись данных о пролетах и о их времени
                 str_overflights_report = \
                     "".join(['Основные показатели периодичности пролетов на текущий момент:\n',
-                             self.to_get_main_data_about_periods(
+                             to_get_main_data_about_periods(
                                  periods_of_overflight,
                                  time_unit,
                                  numerals_count_after_point_in_solutions_and_overflights_report,
@@ -1180,13 +811,13 @@ class Task:
                     str_scanned_area.append("".join(['\t', str(i + 1), ' раз просканированно ',
                                                      str(round(scanned_area_list[i],
                                                                count_of_numbers_after_point_in_area_report)),
-                                                         '% исследуемой территории\n']))
+                                                     '% исследуемой территории\n']))
                 "".join(str_scanned_area)
             else:
                 for i in range(0, len(scanned_area_list)):
                     str_scanned_area.append(
-                        "".join(['\t', str(i + 1), ' раз просканированно '
-                                    ,str(round(scanned_area_list[i], count_of_numbers_after_point_in_area_report)),
+                        "".join(['\t', str(i + 1), ' раз просканированно ',
+                                 str(round(scanned_area_list[i], count_of_numbers_after_point_in_area_report)),
                                  ' м^2 исследуемой территории\n']))
             str_scanned_area = "".join(str_scanned_area)
         else:
@@ -1196,155 +827,34 @@ class Task:
                               str_solutions_report, str_overflights_report, str_scanned_area, '\n'])
         return str_report
 
-    def to_define_initial_times_of_scan_session(self):
+    def to_get_information_about_output_data(self):
         """
         @Описание:
-            Метод определяет модельное время всех пролётов на данный момент (начала сессии скаирования).
-        :return: список объектов datetime - модельного времени всех пролётов на данный момент (начала сессии
-            скаирования)
-        """
-        time_of_growth_of_information = self.time_of_growth_of_information
-        # Массив модельного времени пролетов
-        time_of_overflights = []
-        if len(time_of_growth_of_information) > 0:
-            # Начальное время первого пролёта
-            initial_time_of_overflight = time_of_growth_of_information[0]
-            # Вычисление времен начала пролетов. Началом пролета считается то время, когда сбор данных только начался, а до
-            #   этого был нулевым
-            for i in range(1, len(time_of_growth_of_information)):
-                if (time_of_growth_of_information[i] - time_of_growth_of_information[i - 1]).total_seconds() > \
-                    self.step:
-                    time_of_overflights.append(initial_time_of_overflight)
-                    initial_time_of_overflight = time_of_growth_of_information[i]
-            time_of_overflights.append(initial_time_of_overflight)
-        return time_of_overflights
-
-    def to_get_main_data_about_periods(self, periods, unit_of_output_time, numerals_count_after_point,
-                                       overall_time_of_modeling):
-        """
-        @Описание:
-            Метод возвращает некоторые основные показатели периодчности по заданным периодам времени в заданых
-                едидниицах измерения времени. Среди выходных параметров: среднее, медианное, максимальное, минимальное
-                значение, дисперсия и среднеквадратическое отклонение, а также общее количество значений за заданное
-                время наблюдения в заданных единицах измерения времени.
-        :param periods: списов периодов в секундах, по которым производится вычисление (int, double).
-        :param unit_of_output_time: единицы измерения времени (см. файл TimeManagement), в которых будут выводиться
-               данные (String).
-        :param numerals_count_after_point: количество знаков после запятой, в выходных значениях значениях (int).
-        :param overall_time_of_modeling: общее время вычисления предоставленных значений в секундах (int, double).
-        :return: "основные показатели" строкой в общем виде:
-            Средний период:         '**.**' 'u'
-            Медианный период:       '**.**' 'u'
-            Максимальный период:    '**.**' 'u'
-            Минимальный период:     '**.**' 'u'
-            Дисперсия:              '**.**' 'u'
-            Среднее кв. отклнение:  '**.**' 'u'
-            Всего за время моделирования - '**.**' 'u' - было сделано '**' измерений
-        """
-        # Символ - обозначение единицы измерения времени unit_of_output_time
-        unit_symbol = unit_in_symbol(unit_of_output_time)
-        # Если список значений periods не пустой, вычисляются "основные" параметры
-        if periods is not []:
-            # Вычисление выходных параметров  с помощью метода to_determine_median_average_max_min_dispersion_standard
-            average_period_value, median_period_value, max_period_value, min_period_value, dispersion_period_value,\
-                standard_deviation_period_value = self.to_determine_median_average_max_min_dispersion_standard(periods)
-            # Перевод всех "основных" параметров из секунд в единицы измерения времени unit_of_output_time и округление
-            #   до numerals_count_after_point знаков после запятой
-            average_period_value = round(seconds_to_unit(average_period_value, unit_of_output_time),
-                                         numerals_count_after_point)
-            median_period_value = round(seconds_to_unit(median_period_value, unit_of_output_time),
-                                        numerals_count_after_point)
-            max_period_value = round(seconds_to_unit(max_period_value, unit_of_output_time),
-                                     numerals_count_after_point)
-            min_period_value = round(seconds_to_unit(min_period_value, unit_of_output_time),
-                                     numerals_count_after_point)
-            dispersion_period_value = round(seconds_to_unit(dispersion_period_value, unit_of_output_time),
-                                            numerals_count_after_point)
-            standard_deviation_period_value = round(seconds_to_unit(standard_deviation_period_value,
-                                                                    unit_of_output_time),
-                                                    numerals_count_after_point)
-        # Если список значений periods пустой, "основные" параметры приравниваются к нулю
-        else:
-            average_period_value = 0
-            median_period_value = 0
-            max_period_value = 0
-            min_period_value = 0
-            dispersion_period_value = 0
-            standard_deviation_period_value = 0
-        # В любом случае время вычислений переводится в unit_of_output_time и округляется до numerals_count_after_point
-        #   знаков
-        overall_time_of_modeling = round(seconds_to_unit(overall_time_of_modeling, unit_of_output_time),
-                                         numerals_count_after_point)
-        # Запись вычесленных данных в строку
-        str_data_about_periods = "".join([
-            '\tСредний период:\t\t\t', str(average_period_value), ' ', unit_symbol, '\n',
-            '\tМедианный период:\t\t', str(median_period_value), ' ', unit_symbol, '\n',
-            '\tМаксимальный период:\t', str(max_period_value), ' ', unit_symbol, '\n',
-            '\tМинимальный период:\t\t', str(min_period_value), ' ', unit_symbol, '\n',
-            '\tДисперсия:\t\t\t\t', str(dispersion_period_value), ' ', unit_symbol, '\n',
-            '\tСреднее кв. отклнение:\t', str(standard_deviation_period_value), ' ', unit_symbol, '\n',
-            '\tВсего за время моделирования - ', str(overall_time_of_modeling), ' ', unit_symbol,
-            ' - было сделано ', str(len(periods)), ' измерений'])
-        return str_data_about_periods
-
-    @staticmethod
-    def to_determine_median_average_max_min_dispersion_standard(numbers):
-        """
-        @Описание:
-            По списку чисел вычисляет их среднее, медианное, максимальное, минимальное значение, их дисперсию и
-                среднеквадратическое отклонение.
-        :param numbers: список чисел, для которых проводится вычисления.
-        :return:
-            average_value: среднее значение по списку numbers (double)
-            median_value: медианное значение по списку numbers (double)
-            max_value: максимальное значение по списку numbers (double)
-            min_value: минимальное значение по списку numbers (double)
-            dispersion: дисперсия по списку numbers (double)
-            standard_deviation: среднеквадратическое отклонение по списку numbers (double)
-        """
-        if len(numbers) > 0:
-            average_value = statistics.mean(numbers)
-            median_value = statistics.median(numbers)
-            max_value = max(numbers)
-            min_value = min(numbers)
-            if len(numbers) > 1:
-                dispersion = statistics.variance(numbers)
-                standard_deviation = statistics.stdev(numbers)
-            else:
-                dispersion = 0
-                standard_deviation = 0
-        else:
-            average_value = 0
-            median_value = 0
-            max_value = 0
-            min_value = 0
-            dispersion = 0
-            standard_deviation = 0
-        return average_value, median_value, max_value, min_value, dispersion, standard_deviation
-
-    def to_get_information_about_task(self):
-        """
-        @Описание:
-            Метод возвращает некоторые данные о выполняемой задаче - о объекте self - в виде строки.
+            Метод возвращает строку, содержащую данные о выполненой задачи и о выходных данных. Эта строка вставляется в
+                файлы, которые создает  сохраняет OutputDataMaker.
                 Это следующие данные:
                     название задачи self.name;
                     начальное и конечное модельное время self.initial_annual_observation_period и
                         self.final_annual_observation_period;
                     шаг изменения модельного времени self.step;
                     список спутников, выполняющих задачу self.satellites_group.satellites_list;
+                    список полигонов, которые должны быть просканированы для выполнения задачи;
                     границы допустимого периода наблюдения self.initial_annual_observation_period и
                         self.final_annual_observation_period, если он задан;
                     максимально допустимый зенитный угол Солнца self.max_zenith_angle;
-                    максимально допустимый балл облачности self.max_cloud_score.
+                    максимально допустимый балл облачности self.max_cloud_score;
+                    учитывается ли частичная облачность.
 
         :return: строка данных (String) в виде:
             Основные параметры задачи 'name'
                 Модельное время:                                от 'yyyy-MM-dd hh:mm:ss' до 'yyyy-MM-dd hh:mm:ss'
                 Шаг изменения модельного времени:               'step' с
                 Спутники, выполняющие задачу:                   'satellite_1', 'satellite_2', 'satellite_3', ...
+                Названия сканируеемых полигонов:                'polygon_1', 'polygon_2', 'polygon_3', ...
                 Допустимый период наблюдения:                   от 'ddd' дня до 'ddd' дня (или 'не задан')
                 Максимально допустимый зенитный угол Солнца:    'uu'°
                 Максимально допустимый балл облачности:         'sss'
+                Частичная облачность учитывается (не учитывается)
         """
         # Запись списка спутников self.satellites_group.satellites_list в строку
         str_satellites = []
@@ -1353,6 +863,13 @@ class Task:
         str_satellites = "".join(str_satellites)
         # Удаление запятой в конце строчного списка спутников
         str_satellites = str_satellites[:-2]
+        # Запись списка полигонов self.polygons_group.polygons_list в строку
+        str_polygons = []
+        for polygon in self.polygons_group.polygons_list:
+            str_polygons.append("".join([polygon.name, ', ']))
+        str_polygons = "".join(str_polygons)
+        # Удаление запятой в конце строчного списка спутников
+        str_polygons = str_polygons[:-2]
         # Запись границ годового периода наблюдений в строку, если он задан и 'не задан', если не задан
         if self.initial_annual_observation_period == DEFAULT_INITIAL_ANNUAL_OBSERVATION_PERIOD and \
                 self.final_annual_observation_period == DEFAULT_FINAL_ANNUAL_OBSERVATION_PERIOD:
@@ -1360,245 +877,288 @@ class Task:
         else:
             str_annual_observation = "".join(['от ', str(self.initial_annual_observation_period), ' дня до ',
                                               str(self.final_annual_observation_period), ' дня'])
+        if self.to_consider_partial_cloudiness:
+            str_considering_of_partial_cloudiness = 'Частичная облачность учитывается'
+        else:
+            str_considering_of_partial_cloudiness = 'Частичная облачность не учитывается'
         # Запись информации в строку
         str_info = "".join([
             'Основные параметры задачи\t', str(self.name), ':\n',
-            '\tМодельное время:\t\t\t\tот ', str(self.initial_simulation_time), ' до ', str(self.final_simulation_time),
+            '\tМодельное время:\t\t\t\tот ', str(self.initial_simulation_time), ' до ',
+            str(self.final_simulation_time),
             '\n',
             '\tШаг изменения модельного времени:\t\t', str(self.step), ' с\n',
             '\tСпутники, выполняющие задачу:\t\t\t', str_satellites, '\n',
+            '\tНазвания сканируеемых полигонов:\t\t', str_polygons, '\n',
             '\tДопустимый период наблюдения:\t\t\t', str_annual_observation, '\n',
             '\tМаксимально допустимый зенитный угол Солнца:\t', str(self.max_zenith_angle), '°\n',
-            '\tМаксимально допустимый балл облачности:\t\t', str(self.max_cloud_score), '\n\n'])
+            '\tМаксимально допустимый балл облачности:\t\t', str(self.max_cloud_score), '\n',
+            '\t', str_considering_of_partial_cloudiness, '\n\n'])
         return str_info
 
-    def to_identify_periods_sec(self, time_list, first_time=None, to_skip_time_out_of_observation_period=False):
+    def to_prepare_data_to_output(self):
         """
         @Описание:
-            Метод определяет время от времени начала наблюдения до первого значения времени из заданного списка и между
-                соседними значениями времени из заданного списка в секундлах. Возможно вычисление периодов только по
-                допустимому времени наблюдения.
-        :param time_list: список значений времени, по которому будут вычисляться (date_time).
-        :param first_time: начальное время наблюдений, от которого будет отсчитываться первый период (datetime).
-               Допустимо None. При этом сразу вычисляются периоды между значениями time_list. По умолчанию None.
-        :param to_skip_time_out_of_observation_period: пропускать промежутки времени, не входящие в годовые периоды
-               наблюдения (boolean). По умолчанию False.
-        :return: список приодов в секундах (int, double)
+            Метод возвращает объект OutputDataMaker, в который записаны данные о задаче, о времени выполнения задачи, о
+                пролетах и о площади просканированной территории. С помощью этого объекта выводятся данные о выполнении
+                задачи, о пролетах и др. в требуемом виде.
+        :return: объект OutputDataMaker
         """
-        # Если нету пары значений времени (начального времени first_time и одного значения из time_list или два значения
-        #   из time_list), то возвращается [], а дальнейшие вычисления не производятся. Если есть, то задаётся первое
-        #   значение времени, от которого будет вестись отсчет - previous_time.
-        if first_time is not None:
-            if len(time_list) > 0:
-                previous_time = first_time
-            else:
-                return []
+        return OutputDataMaker.OutputDataMaker(self.name, self.polygons_group.full_area, self.initial_simulation_time,
+                                               self.final_simulation_time, self.step, self.growth_of_information,
+                                               self.time_of_growth_of_information, self.time_of_solutions,
+                                               self.initial_annual_observation_period,
+                                               self.final_annual_observation_period,
+                                               self.to_get_information_about_output_data())
+
+
+def to_identify_periods_sec(time_list, first_time=None,
+                            initial_annual_observation_period=DEFAULT_INITIAL_ANNUAL_OBSERVATION_PERIOD,
+                            final_annual_observation_period=DEFAULT_FINAL_ANNUAL_OBSERVATION_PERIOD,
+                            to_skip_time_out_of_observation_period=False):
+    """
+    @Описание:
+        Метод определяет время от времени начала наблюдения до первого значения времени из заданного списка и между
+            соседними значениями времени из заданного списка в секундлах. Возможно вычисление периодов только по
+            допустимому годовому периоду наблюдения.
+    :param time_list: список значений времени, по которому будут вычисляться (date_time).
+    :param first_time: начальное время наблюдений, от которого будет отсчитываться первый период (datetime).
+        Допустимо None. При этом сразу вычисляются периоды между значениями time_list. По умолчанию None.
+    :param initial_annual_observation_period: номер первого дня в невисокосном году допустимого годового периода
+        наблюдения (времени в году, когда допустима съемка) (int). Задается методом to_set_annual_observations_period.
+        По умолчанию DEFAULT_INITIAL_ANNUAL_OBSERVATION_PERIOD.
+    :param final_annual_observation_period: номер последнего дня в невисокосном году годового подустимого периода
+        наблюдений (времени в году, когда допустима съемка) (int). Задается методом to_set_annual_observations_period.
+        По умолчанию DEFAULT_FINAL_ANNUAL_OBSERVATION_PERIOD.
+    :param to_skip_time_out_of_observation_period: пропускать промежутки времени, не входящие в годовые периоды
+           наблюдения (boolean). По умолчанию False.
+    :return: список приодов в секундах (int, double)
+    """
+    # Если нету пары значений времени (начального времени first_time и одного значения из time_list или два значения
+    #   из time_list), то возвращается [], а дальнейшие вычисления не производятся. Если есть, то задаётся первое
+    #   значение времени, от которого будет вестись отсчет - previous_time.
+    if first_time is not None:
+        if len(time_list) > 0:
+            previous_time = first_time
         else:
-            if len(time_list > 1):
-                previous_time = time_list[0]
-                del time_list[0]
-            else:
-                return []
-        # В список periods записываются периоды
-        periods = []
-        # Если не пропускается время между периодами наблюдения
-        if not to_skip_time_out_of_observation_period:
-            # Список periods заполняется значениями периодов
+            return []
+    else:
+        if len(time_list > 1):
+            previous_time = time_list[0]
+            del time_list[0]
+        else:
+            return []
+    # В список periods записываются периоды
+    periods = []
+    # Если не пропускается время между периодами наблюдения
+    if not to_skip_time_out_of_observation_period:
+        # Список periods заполняется значениями периодов
+        for time in time_list:
+            period = (time - previous_time).total_seconds()
+            periods.append(period)
+            previous_time = time
+    # Если пропускается время между периодами наблюдения
+    else:
+        # Определение индикатора observation_period_inside_one_year, который показывает, что
+        #   final_annual_observation_period больше initial_annual_observation_period. Это означает, что что и начало и
+        #   конец периода наблюдения находятся внутри одного года без перехода в следующий (если True, если False, то
+        #   наоборот).
+        observation_period_inside_one_year = final_annual_observation_period > initial_annual_observation_period
+        # Вычисление даты начала годового периода наблюдения
+        current_year = time_list[0].year
+        start_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+            initial_annual_observation_period, current_year)
+        end_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+            final_annual_observation_period, current_year)
+        # Если previous_time оказывается не в периоде наблюдения, оно перемещается на начало следующего периода
+        if observation_period_inside_one_year:
+            if start_of_current_observation_period > previous_time > end_of_current_observation_period:
+                previous_time = start_of_current_observation_period
+        else:
+            if previous_time < start_of_current_observation_period:
+                previous_time = start_of_current_observation_period
+                if previous_time < end_of_current_observation_period:
+                    if not isleap(current_year):
+                        days_in_current_year = DAYS_IN_LEAP_YEAR
+                    else:
+                        days_in_current_year = DAYS_IN_NOT_LEAP_YEAR
+                    previous_time += timedelta(days=days_in_current_year)
+        # Если период наблюдений не пересекает границу соседних годов
+        if observation_period_inside_one_year:
             for time in time_list:
-                period = (time - previous_time).total_seconds()
+                current_year = time.year
+                year_of_previous_time = previous_time.year
+                skipped_time = 0
+                year_of_skipped_period = current_year
+                # Вычисление времени, не входящего в период наблюдения
+                while year_of_skipped_period > year_of_previous_time:
+                    start_of_new_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+                        initial_annual_observation_period, year_of_skipped_period)
+                    end_of_old_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+                        final_annual_observation_period, year_of_skipped_period - 1)
+                    skipped_time += (
+                            start_of_new_observation_period - end_of_old_observation_period).total_seconds()
+                    year_of_skipped_period -= 1
+                # Вычисление периода без времени, не входящего в период наблюдения
+                period = (time - previous_time).total_seconds() - skipped_time
                 periods.append(period)
                 previous_time = time
-        # Если пропускается время между периодами наблюдения
+        # Если период наблюдений пересекает границу соседних годов
         else:
-            # Вычисление даты начала годового периода наблюдения
-            current_year = time_list[0].year
-            start_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                self.initial_annual_observation_period, current_year)
-            end_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                self.final_annual_observation_period, current_year)
-            # Если previous_time оказывается не в периоде наблюдения, оно перемещается на начало следующего периода
-            if self.observation_period_inside_one_year:
-                if start_of_current_observation_period > previous_time > end_of_current_observation_period:
-                    previous_time = start_of_current_observation_period
-            else:
-                if previous_time < start_of_current_observation_period:
-                    previous_time = start_of_current_observation_period
-                    if previous_time < end_of_current_observation_period:
-                        if not isleap(current_year):
-                            days_in_current_year = DAYS_IN_LEAP_YEAR
-                        else:
-                            days_in_current_year = DAYS_IN_NOT_LEAP_YEAR
-                        previous_time += timedelta(days=days_in_current_year)
-            # Если период наблюдений не пересекает границу соседних годов
-            if self.observation_period_inside_one_year:
-                for time in time_list:
-                    current_year = time.year
-                    year_of_previous_time = previous_time.year
-                    skipped_time = 0
-                    year_of_skipped_period = current_year
-                    # Вычисление времени, не входящего в период наблюдения
-                    while year_of_skipped_period > year_of_previous_time:
-                        start_of_new_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                            self.initial_annual_observation_period, year_of_skipped_period)
-                        end_of_old_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                            self.final_annual_observation_period, year_of_skipped_period - 1)
-                        skipped_time += (
-                                start_of_new_observation_period - end_of_old_observation_period).total_seconds()
-                        year_of_skipped_period -= 1
-                    # Вычисление периода без времени, не входящего в период наблюдения
-                    period = (time - previous_time).total_seconds() - skipped_time
-                    periods.append(period)
-                    previous_time = time
-            # Если период наблюдений пересекает границу соседних годов
-            else:
-                for time in time_list:
-                    day_of_time_in_year = to_determine_days_number_in_not_leap_year(previous_time)
-                    if day_of_time_in_year >= self.initial_annual_observation_period:
-                        year_of_not_observing_period = previous_time.year + 1
-                    else:
-                        year_of_not_observing_period = previous_time.year
-                    end_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                        self.final_annual_observation_period, year_of_not_observing_period)
-                    skipped_time = 0
-                    time_copy = time
-                    # Вычисление времени, не входящего в период наблюдения
-                    while time_copy >= end_of_current_observation_period:
-                        day_of_time_copy_in_year = to_determine_days_number_in_not_leap_year(previous_time)
-                        if day_of_time_copy_in_year >= self.initial_annual_observation_period:
-                            year_of_skipped_period = previous_time.year
-                        else:
-                            year_of_skipped_period = previous_time.year - 1
-                        start_of_new_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                            self.initial_annual_observation_period, year_of_skipped_period)
-                        end_of_old_observation_period = to_determine_date_by_days_number_in_not_leap_year(
-                            self.final_annual_observation_period, year_of_skipped_period)
-                        skipped_time += (start_of_new_observation_period - end_of_old_observation_period). \
-                            total_seconds()
-                        time_copy = to_determine_date_by_days_number_in_not_leap_year(
-                            to_determine_days_number_in_not_leap_year(time_copy), time_copy.year - 1)
-                    # Вычисление периода без времени, не входящего в период наблюдения
-                    period = (time - previous_time).total_seconds() - skipped_time
-                    periods.append(period)
-                    previous_time = time
-        return periods
-
-    def to_make_axis(self, values, times, unit_of_time, to_skip_time_out_of_observation_period=False,
-                     time_axis_in_units=False):
-        """
-        @Описание:
-            Метод принимает список чисел и список соответствующих им значений времени. Числа группируются по времени с
-                шагом в одну заданную единицу измерения времени и суммируются. На выход подается список сумм чисел и
-                список значений времени, соответсвующих суммам (началу отсчета времени для группы) или отсчеты заданных
-                единиц измерения времени от первого - нулевого значения.
-        :param values: список начений (int, double)
-        :param times: список значений времени (datetime)
-        :param unit_of_time: единицы измерения времен (см. файл TimeManagement) (String)
-        :param to_skip_time_out_of_observation_period: пропускать промежутки времени, не входящие в годовые периоды
-               наблюдения (boolean). По умолчанию False.
-        :param time_axis_in_units: выводить список времени для просуммированных значений в виде отсчетов единиц
-               измерения unit_of_time времени от первого - нулевого значения (boolean). Иначе выводить в виде значений
-               времени datetime.  По умолчанию False.
-        :return:
-            value_axis: список чисел - сумм чисел из values по времени times с шагом в один unit_of_time (int, double).
-            time_axis: список времени с шагом в один unit_of_time, соответствует value_axis (datetime или int).
-        """
-        # Начальное и конечное время вычислений
-        initial_time = self.initial_simulation_time
-        final_time = self.final_simulation_time
-        # Вычисление шага времени, по которому будет суммирование в секундах
-        step = to_get_unit_in_seconds(unit_of_time)
-        # Добавление в times начального времени моделирования, а в values нуля, если это время отсуттствует
-        if initial_time < times[0]:
-            values.insert(0, 0)
-            times.insert(0, initial_time)
-        # Добавление в times конечного времени моделирования, а в values нуля, если это время отсуттствует
-        if final_time > times[-1]:
-            values.append(0)
-            times.append(final_time)
-        # Новые списки
-        value_axis = []
-        time_axis = []
-        # previous_time - начальное время периода, по которому будет производиться суммрование
-        previous_time = times[0]
-        # current_time - конечное время периода, по которому будет производиться суммрование
-        current_time = previous_time + timedelta(seconds=step)
-        # Суммирование в цикле
-        i = 0
-        while current_time <= times[-1]:
-            sum_for_unit = 0
-            while (times[i] >= previous_time) and (times[i] < current_time):
-                sum_for_unit += values[i]
-                i += 1
-            # Запись суммы и времени
-            value_axis.append(sum_for_unit)
-            time_axis.append(current_time)
-            # Переход к следующему периоду
-            previous_time = current_time
-            current_time += timedelta(seconds=step)
-        # Убирает значения, соответствующие времени вне периода наблюдения
-        if to_skip_time_out_of_observation_period:
-            i = 0
-            # Начало и конец периодов наблюдения (в днях в невисокосном году)
-            initial_annual_observation_period = self.initial_annual_observation_period
-            final_annual_observation_period = self.final_annual_observation_period
-            # Цикл по всему time_axis
-            while i < len(time_axis):
-                day_number = to_determine_days_number_in_not_leap_year(time_axis[i])
-                current_day_between_borders_of_annual_observation_period =\
-                    initial_annual_observation_period < day_number < final_annual_observation_period
-                current_day_in_observation_period = (not self.observation_period_inside_one_year or
-                                                     current_day_between_borders_of_annual_observation_period) and \
-                                                    (self.observation_period_inside_one_year or
-                                                     not current_day_between_borders_of_annual_observation_period) or \
-                    day_number == initial_annual_observation_period or \
-                    day_number == final_annual_observation_period
-
-                if current_day_in_observation_period:
-                    i = i + 1
+            for time in time_list:
+                day_of_time_in_year = to_determine_days_number_in_not_leap_year(previous_time)
+                if day_of_time_in_year >= initial_annual_observation_period:
+                    year_of_not_observing_period = previous_time.year + 1
                 else:
-                    # Удаление лишних значений
-                    del value_axis[i]
-                    del time_axis[i]
-        # Перевод времени datetime в единицы измерения времени unit_of_time
-        if time_axis_in_units:
-            initial_time = times[0]
-            for i in range(0, len(times)):
-                times[i] = (times[i] - initial_time).total_seconds() / step
+                    year_of_not_observing_period = previous_time.year
+                end_of_current_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+                    final_annual_observation_period, year_of_not_observing_period)
+                skipped_time = 0
+                time_copy = time
+                # Вычисление времени, не входящего в период наблюдения
+                while time_copy >= end_of_current_observation_period:
+                    day_of_time_copy_in_year = to_determine_days_number_in_not_leap_year(previous_time)
+                    if day_of_time_copy_in_year >= initial_annual_observation_period:
+                        year_of_skipped_period = previous_time.year
+                    else:
+                        year_of_skipped_period = previous_time.year - 1
+                    start_of_new_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+                        initial_annual_observation_period, year_of_skipped_period)
+                    end_of_old_observation_period = to_determine_date_by_days_number_in_not_leap_year(
+                        final_annual_observation_period, year_of_skipped_period)
+                    skipped_time += (start_of_new_observation_period - end_of_old_observation_period). \
+                        total_seconds()
+                    time_copy = to_determine_date_by_days_number_in_not_leap_year(
+                        to_determine_days_number_in_not_leap_year(time_copy), time_copy.year - 1)
+                # Вычисление периода без времени, не входящего в период наблюдения
+                period = (time - previous_time).total_seconds() - skipped_time
+                periods.append(period)
+                previous_time = time
+    return periods
 
-        return value_axis, time_axis
 
-    @staticmethod
-    def to_sum_values_on_axis(axis):
-        """
-        @Описание:
-            Суммирование каждого значения заданного списка со всеми прдыдущими (интегрирование)
-        :param axis: список значений, по которым проводится суммирование (int, double)
-        :return: проинтегрированный список (int, double)
-        """
-        summed_axis = [axis[0]]
-        for i in range(1, len(axis)):
-            summed_axis.append(axis[i] + summed_axis[i - 1])
-        return summed_axis
+def to_get_main_data_about_periods(periods, unit_of_output_time, numerals_count_after_point, overall_time_of_modeling):
+    """
+    @Описание:
+        Метод возвращает некоторые основные показатели периодчности по заданным периодам времени в заданых
+            едидниицах измерения времени. Среди выходных параметров: среднее, медианное, максимальное, минимальное
+            значение, дисперсия и среднеквадратическое отклонение, а также общее количество значений за заданное
+            время наблюдения в заданных единицах измерения времени.
+    :param periods: списов периодов в секундах, по которым производится вычисление (int, double).
+    :param unit_of_output_time: единицы измерения времени (см. файл TimeManagement), в которых будут выводиться
+           данные (String).
+    :param numerals_count_after_point: количество знаков после запятой, в выходных значениях значениях (int).
+    :param overall_time_of_modeling: общее время вычисления предоставленных значений в секундах (int, double).
+    :return: "основные показатели" строкой в общем виде:
+        Средний период:         '**.**' 'u'
+        Медианный период:       '**.**' 'u'
+        Максимальный период:    '**.**' 'u'
+        Минимальный период:     '**.**' 'u'
+        Дисперсия:              '**.**' 'u'
+        Среднее кв. отклнение:  '**.**' 'u'
+        Всего за время моделирования - '**.**' 'u' - было сделано измерений: '**'
+    """
+    # Символ - обозначение единицы измерения времени unit_of_output_time
+    unit_symbol = unit_in_symbol(unit_of_output_time)
+    # Если список значений periods не пустой, вычисляются "основные" параметры
+    if periods is not []:
+        # Вычисление выходных параметров  с помощью метода to_determine_median_average_max_min_dispersion_standard
+        average_period_value, median_period_value, max_period_value, min_period_value, dispersion_period_value,\
+            standard_deviation_period_value = to_determine_median_average_max_min_dispersion_standard(periods)
+        # Перевод всех "основных" параметров из секунд в единицы измерения времени unit_of_output_time и округление
+        #   до numerals_count_after_point знаков после запятой
+        average_period_value = round(seconds_to_unit(average_period_value, unit_of_output_time),
+                                     numerals_count_after_point)
+        median_period_value = round(seconds_to_unit(median_period_value, unit_of_output_time),
+                                    numerals_count_after_point)
+        max_period_value = round(seconds_to_unit(max_period_value, unit_of_output_time),
+                                 numerals_count_after_point)
+        min_period_value = round(seconds_to_unit(min_period_value, unit_of_output_time),
+                                 numerals_count_after_point)
+        dispersion_period_value = round(seconds_to_unit(dispersion_period_value, unit_of_output_time),
+                                        numerals_count_after_point)
+        standard_deviation_period_value = round(seconds_to_unit(standard_deviation_period_value,
+                                                                unit_of_output_time),
+                                                numerals_count_after_point)
+    # Если список значений periods пустой, "основные" параметры приравниваются к нулю
+    else:
+        average_period_value = 0
+        median_period_value = 0
+        max_period_value = 0
+        min_period_value = 0
+        dispersion_period_value = 0
+        standard_deviation_period_value = 0
+    # В любом случае время вычислений переводится в unit_of_output_time и округляется до numerals_count_after_point
+    #   знаков
+    overall_time_of_modeling = round(seconds_to_unit(overall_time_of_modeling, unit_of_output_time),
+                                     numerals_count_after_point)
+    # Запись вычесленных данных в строку
+    str_data_about_periods = "".join([
+        '\tСредний период:\t\t', str(average_period_value), ' ', unit_symbol, '\n',
+        '\tМедианный период:\t', str(median_period_value), ' ', unit_symbol, '\n',
+        '\tМаксимальный период:\t', str(max_period_value), ' ', unit_symbol, '\n',
+        '\tМинимальный период:\t', str(min_period_value), ' ', unit_symbol, '\n',
+        '\tДисперсия:\t\t', str(dispersion_period_value), ' ', unit_symbol, '\n',
+        '\tСреднее кв. отклнение:\t', str(standard_deviation_period_value), ' ', unit_symbol, '\n',
+        '\tВсего за время моделирования - ', str(overall_time_of_modeling), ' ', unit_symbol,
+        ' - было сделано измерений: ', str(len(periods))])
+    return str_data_about_periods
 
-    @staticmethod
-    def to_make_histogram(values, unit_of_time):
-        """
-        @Описание:
-            Метод создает гистограмму из списка значений с шагом в одну заданную единицу измерения времени.
-        :param values: список значений, по которым составляется гистограмма
-        :param unit_of_time: единица измерения времени (см. файл TimeManagement), в которых будит измеряться время в
-            гистограмме и по которой будет определяться шаг времени
-        :return: список, соответствующей вычисленной гистограмме
-        """
-        # Перевод единиц измерения unit_of_time в секунды
-        step = to_get_unit_in_seconds(unit_of_time)
-        # Определение максимума гистограммы по времени в секундах
-        max_value = (max(values) // step) * step + step
-        # Перевод максимума гистограммы по времени из секунд в unit_of_time
-        histogram_len = int(max_value // step)
-        # Составление гистограммы
-        histogram = [0] * histogram_len
-        for value in values:
-            index = int(value // step)
-            histogram[index] += 1
-        return histogram
+
+def to_determine_median_average_max_min_dispersion_standard(numbers):
+    """
+    @Описание:
+        По списку чисел вычисляет их среднее, медианное, максимальное, минимальное значение, их дисперсию и
+            среднеквадратическое отклонение.
+    :param numbers: список чисел, для которых проводится вычисления.
+    :return:
+        average_value: среднее значение по списку numbers (double)
+        median_value: медианное значение по списку numbers (double)
+        max_value: максимальное значение по списку numbers (double)
+        min_value: минимальное значение по списку numbers (double)
+        dispersion: дисперсия по списку numbers (double)
+        standard_deviation: среднеквадратическое отклонение по списку numbers (double)
+    """
+    if len(numbers) > 0:
+        average_value = statistics.mean(numbers)
+        median_value = statistics.median(numbers)
+        max_value = max(numbers)
+        min_value = min(numbers)
+        if len(numbers) > 1:
+            dispersion = statistics.variance(numbers)
+            standard_deviation = statistics.stdev(numbers)
+        else:
+            dispersion = 0
+            standard_deviation = 0
+    else:
+        average_value = 0
+        median_value = 0
+        max_value = 0
+        min_value = 0
+        dispersion = 0
+        standard_deviation = 0
+    return average_value, median_value, max_value, min_value, dispersion, standard_deviation
+
+
+def to_define_initial_times_of_scan_session(time_of_growth_of_information, step):
+    """
+    @Описание:
+        Метод определяет время всех начала пролётов на данный момент (начала сессии скаирования).
+    :param time_of_growth_of_information: список времени (datetime) сканирования.
+    :param step: шаг времени в секундах (int, double) - точность, с которой определяется начало пролета.
+    :return: список объектов datetime - времени всех пролётов на данный момент (начала сессии скаирования)
+    """
+    time_of_growth_of_information = time_of_growth_of_information
+    # Массив модельного времени пролетов
+    time_of_overflights = []
+    if len(time_of_growth_of_information) > 0:
+        # Начальное время первого пролёта
+        initial_time_of_overflight = time_of_growth_of_information[0]
+        # Вычисление времен начала пролетов. Началом пролета считается то время, когда сбор данных только начался,
+        #   а до этого был нулевым
+        for i in range(1, len(time_of_growth_of_information)):
+            if (time_of_growth_of_information[i] - time_of_growth_of_information[i - 1]).total_seconds() > step:
+                time_of_overflights.append(initial_time_of_overflight)
+                initial_time_of_overflight = time_of_growth_of_information[i]
+        time_of_overflights.append(initial_time_of_overflight)
+    return time_of_overflights
