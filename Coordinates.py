@@ -47,7 +47,8 @@ class GeoCoordinates:
             lat_str = str(round(self.lat, count_of_numerals_after_point_in_geo_coordinates)) + ' с. ш.'
         else:
             lat_str = str(round(-self.lat, count_of_numerals_after_point_in_geo_coordinates)) + ' ю. ш.'
-        return lat_str + '\t' + long_str + '\t' + str(round(self.alt, count_of_numerals_after_point_in_altitude)) + ' м'
+        return "".join([lat_str, '\t', long_str, '\t', str(round(self.alt, count_of_numerals_after_point_in_altitude)),
+                        ' км'])
 
     def to_cartesian_coordinates(self, utc_time, earth_ellipsoid):
         """

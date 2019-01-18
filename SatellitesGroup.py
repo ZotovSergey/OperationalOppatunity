@@ -526,7 +526,7 @@ class SatelliteCoordinateSet:
         :param count_of_numerals_after_point_in_velocity: количество знаков после точки при выводе скорости (в метрах в
             секунду). По умолчанию 2.
         :return:  строку (String) в виде:
-            ***.*** с. ш.(ю. ш.)   ***.*** з. д.(в. д.)  ****.* м  ****.** м/с
+            ***.*** с. ш.(ю. ш.)   ***.*** з. д.(в. д.)  ****.* км  ****.** м/с
         """
         return "".join([self.geo_coordinates.to_str(count_of_numerals_after_point_in_geo_coordinates,
                                                     count_of_numerals_after_point_in_altitude), '\t',

@@ -75,8 +75,8 @@ if __name__ == '__main__':
     #   Название задачи
     name = 'Test'
     #   Начальное и конечное время моделирования
-    initial_simulation_time = datetime(2017, 6, 19, 0, 0, 0)
-    final_simulation_time = datetime(2017, 6, 24, 12, 0, 0)
+    initial_simulation_time = datetime(2017, 6, 19, 12, 0, 0)
+    final_simulation_time = datetime(2017, 6, 19, 12, 0, 10)
     #   Шаг изменения модельного времени в секундах
     step = 1
     #   Максимальный зенитный угол Солнца (градусы)
