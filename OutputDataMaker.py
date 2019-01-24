@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 import Task
 from datetime import datetime, timedelta
@@ -352,6 +353,9 @@ class OutputDataMaker:
             (если True, если False, то ось кв. метрах). По умолчанию False.
         :return: сохраняет в директрию directory_address ... - см. описание
         """
+        #   Создание директории, в которую записываются выходные данные, если ее нет
+        if not os.path.exists(directory_address):
+            os.makedirs(directory_address)
         # Будет ли выводиться зависимость просканированной площади за шаг времени от времени в каком-либо виде
         if to_get_graph_information_collection_rate_txt or \
                 to_get_graph_information_collection_rate_pdf or \
@@ -381,7 +385,7 @@ class OutputDataMaker:
         else:
             to_get_histogram_of_overflight_period = False
         # unit_symbol - символ единиц измерения времени для всех выходных данных, кроме графиков, который будет писаться
-        #   в заголовки файлов, в название файлов, на осях гистограм
+        #   в заголовки файлов, в название файлов, на осях гистограмм
         unit_symbol = TimeManagment.unit_in_symbol(unit_of_output_time)
         # Если на осях времени в графиках отображаются единицы измерения времени, в которых будет выводиться информация
         #   о времени, то задается символ единицы измерения такой же, как unit_symbol, если нет, то время на осях
@@ -426,7 +430,7 @@ class OutputDataMaker:
             #       Среднее кв. отклнение:  '**.**' 'u'
             #       Всего за время моделирования - '**.**' 'u' - было сделано '**' измерений
             if to_get_main_data_about_solutions:
-                main_data_solutions_file = open("".join([directory_address, '//', data_name,
+                main_data_solutions_file = open("".join([directory_address, '\\', data_name,
                                                          ' - основные показатели периодичности выполнения задачи (',
                                                          unit_symbol, ').txt']), 'w')
                 main_data_solutions_file.write("".join(['Основные показатели периодичности выполнения задачи ',
@@ -446,7 +450,7 @@ class OutputDataMaker:
             #       Среднее кв. отклнение:  '**.**' 'u'
             #       Всего за время моделирования - '**.**' 'u' - было сделано '**' измерений
             if to_get_main_data_about_overflights:
-                main_data_overflights_file = open("".join([directory_address, '/', self.task_name,
+                main_data_overflights_file = open("".join([directory_address, '/', data_name,
                                                            ' - основные показатели периодичности пролетов спутников (',
                                                            unit_symbol, ').txt']), 'w')
                 main_data_overflights_file.write("".join(['Основные показатели периодичности пролетов спутника ',
@@ -483,8 +487,8 @@ class OutputDataMaker:
                 # Подготовка заголовков
                 graph_title = "".join(['График скорости сканирования площади (', symbol_of_units_of_information, '/',
                                        unit_symbol, ') от времени (', graph_unit_symbol, ')'])
-                graph_address = "".join([directory_address, '/', self.task_name, ' - график скорости сканирования'
-                                                                                 ' площади (',
+                graph_address = "".join([directory_address, '/', data_name, ' - график скорости сканирования'
+                                                                            ' площади (',
                                          symbol_of_units_of_information, ' в ', unit_symbol, ') от времени (',
                                          graph_unit_symbol, ')'])
                 # Подписи осей графика
@@ -525,7 +529,7 @@ class OutputDataMaker:
                 # Подготовка заголовков
                 graph_title = "".join(['График собранной информации (', symbol_of_units_of_information,
                                        ') от времени (', graph_unit_symbol, ')'])
-                graph_address = "".join([directory_address, '/', self.task_name, ' - график собранной информации (',
+                graph_address = "".join([directory_address, '/', data_name, ' - график собранной информации (',
                                          symbol_of_units_of_information, ') от времени (', graph_unit_symbol, ')'])
                 # Подписи осей графика
                 y_label = "".join(['Площадь (', symbol_of_units_of_information, ')'])
@@ -562,7 +566,7 @@ class OutputDataMaker:
             histogram_of_solving_periods = self.to_make_histogram(periods_of_solutions, unit_of_output_time)
             # Подготовка заголовков и подписей осей
             histogram_title = "".join(['Гистограмма распределения решений (', unit_symbol, ')'])
-            histogram_address = "".join([directory_address, '/', self.task_name,
+            histogram_address = "".join([directory_address, '/', data_name,
                                          ' - гистограмма распределения решений (', unit_symbol, ')'])
             x_label = "".join(['Период выполнения задачи (', unit_symbol, ')'])
             y_label = 'Количество решений'
@@ -594,7 +598,7 @@ class OutputDataMaker:
             histogram_of_overflight_periods = self.to_make_histogram(periods_of_overflight, unit_of_output_time)
             # Подготовка заголовков и подписей осей
             histogram_title = "".join(['Гистограмма распределения пролетов (', unit_symbol, ')'])
-            histogram_address = "".join([directory_address, '/', self.task_name,
+            histogram_address = "".join([directory_address, '/', data_name,
                                          ' - гистограмма распределения пролетов (', unit_symbol, ')'])
             x_label = "".join(['Период пролетов (', unit_symbol, ')'])
             y_label = 'Количество пролетов'
@@ -705,10 +709,10 @@ class OutputDataMaker:
                     del time_axis[i]
         # Перевод времени datetime в единицы измерения времени unit_of_time
         if time_axis_in_units:
-            initial_time = time_axis[0]
-            for i in range(0, len(time_axis)):
-                time_axis[i] = (time_axis[i] - initial_time).total_seconds() / step
-
+            time_axis = list(range(0, len(time_axis)))
+            ###initial_time = time_axis[0]
+            ###for i in range(0, len(time_axis)):
+            ###    time_axis[i] = (time_axis[i] - initial_time).total_seconds() / step
         return value_axis, time_axis
 
     @staticmethod

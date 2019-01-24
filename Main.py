@@ -1,10 +1,11 @@
 from Task import Task
+from datetime import datetime
 from SatellitesGroup import SatellitesGroup
 from PolygonsGroup import PolygonsGroup
 from EarthEllipsoid import EarthEllipsoid
-from datetime import datetime
 
 if __name__ == '__main__':
+
     # Создание объекта - эллипсоида Земли по умолчанию. Эллипсоид по умолчанию - это эллипсоид из WGS-84.
     earth_ellipsoid = EarthEllipsoid()
     print("".join(["Эллипсоид Земли\n", earth_ellipsoid.to_str()]))
@@ -73,10 +74,10 @@ if __name__ == '__main__':
 
     # Параметры задачи
     #   Название задачи
-    name = 'Test'
+    name = 'Test2'
     #   Начальное и конечное время моделирования
-    initial_simulation_time = datetime(2017, 6, 19, 12, 0, 0)
-    final_simulation_time = datetime(2017, 6, 19, 12, 0, 10)
+    initial_simulation_time = datetime(2018, 2, 1, 0, 0, 0)
+    final_simulation_time = datetime(2019, 11, 1, 0, 0, 0)
     #   Шаг изменения модельного времени в секундах
     step = 1
     #   Максимальный зенитный угол Солнца (градусы)
@@ -85,7 +86,7 @@ if __name__ == '__main__':
     max_cloud_score = None
     # Началао и конец годового периода наблюдений
     initial_annual_observation_period = 121
-    final_annual_observation_period = 274
+    final_annual_observation_period = 273
     # Минимальный процент сканирования для решения
     min_percent_for_solve = 50
 
@@ -96,7 +97,7 @@ if __name__ == '__main__':
     #   Периоды отчетов
     unit_report_time = 'weeks'
     #   Адрес файла с отчетами
-    report_address = 'D://results//Last Version//test_report.txt'
+    report_address = 'D:\\results\\Last Version\\test_report_long.txt'
     #   Писать в отчете время от начала моделирования
     report_time_from_initial_time_in_days = True
     #   Писать в отчете данные о спутниках
@@ -163,4 +164,4 @@ if __name__ == '__main__':
     # Подготовка данных к выводу
     output_data_maker = task.to_prepare_data_to_output()
     # Сохранение результатов
-    output_data_maker.to_save_data('test_save', 'D:\\results')
+    output_data_maker.to_save_data('long_test_save', 'D:\\results')

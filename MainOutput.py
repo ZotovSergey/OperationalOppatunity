@@ -1,22 +1,24 @@
+import os
 from OutputDataMaker import to_load_data
 
 if __name__ == '__main__':
-    output_data_maker = to_load_data('D:\\results\\data_save.txt')
+    output_data_maker = to_load_data('D:\\results\\long_test_save.txt')
     # Параметры выходных данных
     #   Название файлов с выходными данными
-    data_name = 'Test'
+    data_name = 'Long_test3'
     #   Директория, в которую будут записываться выходные данные
-    directory_address = 'D://results//Last Version'
+    directory_address = 'D:\\results\\long_test_save2'
+
     #   Единицы измерения времени, в которых будут выводиться ресультаты
     unit_of_output_time = 'days'
     #   Количество цифр после запятой в показателях периодичности решений и периодичности пролетов
     numerals_count_after_point = 2
     #   Выводить показатели периодчности решений
-    to_get_main_data_about_solutions = False
+    to_get_main_data_about_solutions = True
     #   Выводить показатели периодчности пролетов
-    to_get_main_data_about_overflights = False
+    to_get_main_data_about_overflights = True
     #   Выводить зависимость сканированной площади за шаг модельного времени от времени в документах txt, pdf, jpg
-    to_get_graph_information_collection_rate_txt = False
+    to_get_graph_information_collection_rate_txt = True
     to_get_graph_information_collection_rate_pdf = False
     to_get_graph_information_collection_rate_png = True
     #   Размеры выводимых графиков зависимости сканированной площади за шаг модельного времени от времени по x и y
@@ -31,7 +33,7 @@ if __name__ == '__main__':
     #       времени от времени
     graph_information_collection_rate_dpi = 95
     #   Выводить зависимость полной сканированной площади от времени в документах txt, pdf, jpg
-    to_get_graph_information_volume_txt = False
+    to_get_graph_information_volume_txt = True
     to_get_graph_information_volume_pdf = False
     to_get_graph_information_volume_png = True
     #   Размеры выводимых графиков зависимости полной сканированной площади от времени по x и y
@@ -72,12 +74,12 @@ if __name__ == '__main__':
     histogram_of_overflight_period_dpi = 95
 
     #   Пропускать периоды, в которые нет наблюдений, для периодов решений и пролетов
-    to_skip_time_out_of_observation_period_in_periods = False
-    #   Пропускать периоды, в которые нет наблюдений, для графиков сканированной площади
+    to_skip_time_out_of_observation_period_in_periods = True
+    #   Для графиков сканированной площади, пропускать периоды, в которые нет наблюдений
     to_skip_time_out_of_observation_period_in_information_value = True
     #   Представлять значения на осях времени на графиках просканированной площади в виде единиц измерения времени
     #       unit_of_output_time
-    time_axis_in_units = False
+    time_axis_in_units = True
     #   Представлять значения на осях площади на графиках просканированной площади в виде процентов от общей площади
     #       всех полигонов
     scanned_area_in_percents = False

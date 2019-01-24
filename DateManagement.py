@@ -13,7 +13,7 @@ def to_determine_days_number_in_year(date):
     :return: номер дня в году для date.
     """
     # Вычисление происходит для того года, в котором и date
-    return (date - datetime(date.year, 1, 1, 0, 0, 0)).days
+    return (date - datetime(date.year, 1, 1, 0, 0, 0)).days + 1
 
 
 def to_determine_days_number_in_not_leap_year(date):
@@ -39,7 +39,7 @@ def to_determine_date_by_days_number_in_year(days_number_in_year, year):
     :param year: год определяемой даты.
     :return: дата по номеру дня days_number_in_year и году year (datetime).
     """
-    return datetime(year, 1, 1, 0, 0, 0) + timedelta(days=days_number_in_year)
+    return datetime(year, 1, 1, 0, 0, 0) + timedelta(days=days_number_in_year - 1)
 
 
 def to_determine_date_by_days_number_in_not_leap_year(days_number_in_not_leap_year, year):

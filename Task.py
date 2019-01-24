@@ -1,5 +1,6 @@
 import math
 import statistics
+import os
 from datetime import timedelta
 from calendar import isleap
 from DateManagement import to_determine_date_by_days_number_in_not_leap_year, to_determine_days_number_in_not_leap_year
@@ -205,9 +206,41 @@ class Task:
         self.satellites_group.to_set_simulation_time(self.initial_simulation_time)
         # Создание файла, в который будут записываться отчеты, если адрес задан
         if report_address is not None:
+            #   Получение адреса директории
+            report_directory = report_address.rsplit('\\', 1)[0]
+            #   Создание директории, если ее нет
+            if not os.path.exists(report_directory):
+                os.makedirs(report_directory)
             report_file = open(report_address, 'w')
         else:
             report_file = None
+        # Проверяется, входет ли начальное время в допустимый период наблюдения. Если нет, то это время переносится на
+        #   начало следующего периода наблюдений и именно оно считается начальным модельным временем и записывается в
+        #   отчетах и выходных данных
+        # Подсчет номера дня в невисокосном году начального модельного времени спутниковой группировки
+        days_number_in_year = to_determine_days_number_in_not_leap_year(self.satellites_group.simulation_time)
+        if (self.observation_period_inside_one_year ^
+            ((days_number_in_year >= self.initial_annual_observation_period) and
+             (days_number_in_year <= self.final_annual_observation_period))) or \
+                (days_number_in_year == self.initial_annual_observation_period) or \
+                (days_number_in_year == self.final_annual_observation_period):
+            new_year = self.initial_simulation_time.year
+            if (self.observation_period_inside_one_year and
+                (days_number_in_year > self.final_annual_observation_period)) or not \
+                    self.observation_period_inside_one_year:
+                new_year += 1
+            new_initial_simulation_time = to_determine_date_by_days_number_in_not_leap_year(
+                self.initial_annual_observation_period, new_year)
+            # Запись в отчет о смене начального времени
+            if unit_report_time is not None:
+                output_about_changing_of_initial_simulation_time = \
+                    "".join(['Начальное модельное время ', str(self.initial_simulation_time),
+                             ' не входит в годовой допустимый интервал наблюдения.\nПоэтому начальное модельное время'
+                             'меняется на начало следующего периода - ', str(new_initial_simulation_time), '\n'])
+                print(output_about_changing_of_initial_simulation_time)
+                if report_file is not None:
+                    report_file.write(output_about_changing_of_initial_simulation_time)
+                self.initial_simulation_time = new_initial_simulation_time
         # Перевод времени между отчетами из единиц измерения времени в секунды, если это время задано
         if unit_report_time is not None:
             report_time_sec = to_get_unit_in_seconds(unit_report_time)
@@ -287,44 +320,48 @@ class Task:
                     # Время от последнего отчета
                     time_from_report_last = 0
             else:
-                # Если не входит, то модельно время сразу переносится на начало следующего годового периода наблюдения
+                # Если не входит, то модельное время сразу переносится на начало следующего годового периода наблюдения
                 new_year = self.satellites_group.simulation_time.year
-                if self.observation_period_inside_one_year:
+                if (self.observation_period_inside_one_year and
+                    (days_number_in_year > self.final_annual_observation_period)) or not \
+                        self.observation_period_inside_one_year:
                     new_year += 1
-                new_simulation_time = to_determine_date_by_days_number_in_not_leap_year(days_number_in_year, new_year)
-                # Если делаются отчеты
+                new_simulation_time = to_determine_date_by_days_number_in_not_leap_year(
+                    self.initial_annual_observation_period, new_year)
+                # В отчете указывается, когда заканчивается и начинаются периоды наблюдения
                 if unit_report_time is not None:
-                    # В отчете указывается, когда заканчивается и начинаются периоды наблюдения
                     report_about_observation_period = "".join([str(self.satellites_group.simulation_time),
-                                                               ': годовой период наблюдения заканчивается.'
+                                                               ': годовой период наблюдения заканчивается.\n'
                                                                'Новый период начинается в ',
                                                                str(new_simulation_time), '\n\n'])
                     print(report_about_observation_period)
-                    report_file.write(report_about_observation_period)
+                    if report_file is not None:
+                        report_file.write(report_about_observation_period)
                     # Если во время вне периода наблюдения настовало время отчета, то отчет делается в начале нового
                     #   периода наблюдений
-                    time_from_report_last += (new_simulation_time - self.satellites_group.simulation_time).seconds
-                    if time_from_report_last >= report_time_sec:
-                        self.to_output_report(report_file,
-                                              report_time_from_initial_time,
-                                              unit_report_time,
-                                              report_data_about_satellites,
-                                              count_of_numerals_after_point_in_geo_coordinates,
-                                              count_of_numerals_after_point_in_altitude,
-                                              count_of_numerals_after_point_in_velocity,
-                                              report_main_data_about_solutions,
-                                              report_main_data_about_overflights,
-                                              time_unit_of_report,
-                                              numerals_count_after_point_in_solutions_and_overflights_report,
-                                              to_skip_time_out_of_observation_period,
-                                              report_data_about_scanned_area,
-                                              report_scanned_area_in_percents,
-                                              count_of_numbers_after_point_in_area_report)
-                        time_from_report_last % report_time_sec
-                # Присвоение нового текущего модельного времени
-                self.satellites_group.simulation_time = new_simulation_time
+                    time_from_report_last += (new_simulation_time - self.satellites_group.simulation_time).\
+                        total_seconds()
+                    # Присвоение нового текущего модельного времени
+                    self.satellites_group.simulation_time = new_simulation_time
+#                    if time_from_report_last >= report_time_sec:
+#                        self.to_output_report(report_file,
+#                                              report_time_from_initial_time,
+#                                              unit_report_time,
+#                                              report_data_about_satellites,
+#                                              count_of_numerals_after_point_in_geo_coordinates,
+#                                              count_of_numerals_after_point_in_altitude,
+#                                              count_of_numerals_after_point_in_velocity,
+#                                              report_main_data_about_solutions,
+#                                              report_main_data_about_overflights,
+#                                              time_unit_of_report,
+#                                              numerals_count_after_point_in_solutions_and_overflights_report,
+#                                              to_skip_time_out_of_observation_period,
+#                                              report_data_about_scanned_area,
+#                                              report_scanned_area_in_percents,
+#                                              count_of_numbers_after_point_in_area_report)
+#                        time_from_report_last % report_time_sec
         # Делается последний отчет о моделирований, и файл с отчетами закрывается, если он был открыт
-        if report_address is not None:
+        if report_file is not None:
             self.to_output_report(report_file,
                                   report_time_from_initial_time,
                                   unit_report_time,
