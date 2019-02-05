@@ -5,6 +5,8 @@ from shapely import geometry
 import math
 import Coordinates
 import DateManagement
+# Ускорение работы объектов класса
+#import pyximport; pyximport.install()
 
 
 class PolygonsGroup:
@@ -66,6 +68,9 @@ class PolygonsGroup:
             группы полигонов в соответвии с распределением из self.common_cloudiness_distr_table для времени из
             аргумента time.
     """
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
+
     # Константа, показвавющая максимальное время, когда облачность может не меняться (секунды)
     TIME_OF_CLOUDINESS_CHANGING = 3600
 
@@ -381,6 +386,9 @@ class Polygon:
             некоторого балла моделируемого полигона для годовых периодов, границы которых также
             записываются
     """
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
+
     def __init__(self, shape, polygon_group):
         self.shape = shape
         self.name = None
@@ -562,6 +570,9 @@ class Segment:
         segment_grabbed(self) – прибавляет единицу к значению поля self.countOfGrabs, то есть обозначает, что этот
         сегмент попал в ПЗ ГСК
     """
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
+
     def __init__(self, long, lat, segments_area):
         self.center_geo_coordinates = Coordinates.GeoCoordinatesAndPointSet(long, lat, 0)
         self.segments_area = segments_area

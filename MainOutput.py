@@ -1,5 +1,5 @@
-import os
 from OutputDataMaker import to_load_data
+
 
 if __name__ == '__main__':
     output_data_maker = to_load_data('D:\\results\\long_test_save.txt')

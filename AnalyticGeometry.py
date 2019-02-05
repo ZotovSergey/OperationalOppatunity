@@ -1,5 +1,6 @@
 import math
 import numpy
+import  pyximport; pyximport.install()
 
 
 class Vector:

@@ -40,6 +40,8 @@ class SatellitesGroup:
         to_add_satellite(self, sat_name, tle_address, angle_of_view) - создает объект Satellite и добавляет его в список
             спутникоа группировки, то есть добавляет новый спутник в группировку.
     """
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
 
     def __init__(self, earth_ellipsoid):
         self.earth_ellipsoid = earth_ellipsoid
@@ -51,7 +53,7 @@ class SatellitesGroup:
         self.task = None
         self.time_of_scanning = 0
 
-    def to_act(self, next_simulation_time, file):
+    def to_act(self, next_simulation_time):
         """
         @Описание:
             Метод моделирует работу спутниковой группировки, то есть всех спутников, входящих в нее, от текущего
@@ -104,7 +106,7 @@ class SatellitesGroup:
                     # Если да, то
                     #   Моделируется сканирование близких полигонов и прибовляет их просканированную площадь к общей
                     #       просканированной площади группы
-                    common_scanned_area += satellite.to_scan(file)
+                    common_scanned_area += satellite.to_scan()
         # Если сканирование закончилось, то обнуляется время сеанса
         else:
             # Если нет то
@@ -229,6 +231,8 @@ class Satellite:
             полигоном для съемки и не закрыт ли сегмент облаками. Если все эти условия соблюдены, то сегмент считается
             просканированным и его площадь прибавляется к сумме, подаваемой на выход метода.
     """
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
 
     def __init__(self, sat_name, tle_address, angle_of_view, satellites_group):
         self.sat_name = sat_name
@@ -244,7 +248,7 @@ class Satellite:
         self.scanned_territory_for_last_step = []
         self.close_polygons = []
 
-    def to_act(self, next_simulation_time, file):
+    def to_act(self, next_simulation_time):
         """
         @Описание:
             Метод моделирует работу спутника от текущего модельного времени группы
@@ -269,7 +273,7 @@ class Satellite:
             #   Моделирование полосы захвата (по прямой линии между точками на орбите)
             self.to_determine_scan_area(current_coordinates_set, next_coordinates_set)
             #   Моделируется сканирование близких полигонов и возвращается площадь
-            return self.to_scan(file)
+            return self.to_scan()
         else:
             # Если нет то
             #   очищается поле просканированной территории
@@ -412,7 +416,7 @@ class Satellite:
                 close_polygons.append(polygon)
         self.close_polygons = close_polygons
 
-    def to_scan(self, file):
+    def to_scan(self):
         """
         @Описание:
             Метод моделирует процесс съемки близких полигонов self.close_polygons) за некоторое время. Производится
@@ -427,10 +431,6 @@ class Satellite:
         :return: площадь просканированной территории (кв. м)
         """
         # Преобразование списка геокоординат self.scanned_territory_for_last_step в объект geometry.Polygon
-        #####
-        file.write(str(self.satellite_coordinates_set.geo_coordinates.long) + '\t' + str(self.satellite_coordinates_set.geo_coordinates.lat) + '\t')
-        file.write(str(self.scanned_territory_for_last_step[0].long) + '\t' + str(self.scanned_territory_for_last_step[0].lat) + '\t')
-        file.write(str(self.scanned_territory_for_last_step[0].long) + '\t' + str(self.scanned_territory_for_last_step[0].lat) + '\n')
         scanned_polygon = geometry.Polygon([
             (self.scanned_territory_for_last_step[0].long, self.scanned_territory_for_last_step[0].lat),
             (self.scanned_territory_for_last_step[1].long, self.scanned_territory_for_last_step[1].lat),
@@ -492,8 +492,10 @@ class SatelliteCoordinateSet:
             при инициализации по полю geo_coordinates.
         subsatellite_cartesian_coordinates - координаты подспутниковой точки в прямоугольной экватериальной системе
             координат. Вычисляется при инициализации по полю subsatellite_geo_coordinates.
-
     """
+
+    # Ускорение работы объектов класса
+    #import pyximport; pyximport.install()
 
     def __init__(self, cartesian_coordinates, velocity_vector, utc_time, earth_ellipsoid):
         self.cartesian_coordinates = cartesian_coordinates

@@ -4,8 +4,8 @@ from SatellitesGroup import SatellitesGroup
 from PolygonsGroup import PolygonsGroup
 from EarthEllipsoid import EarthEllipsoid
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # Создание объекта - эллипсоида Земли по умолчанию. Эллипсоид по умолчанию - это эллипсоид из WGS-84.
     earth_ellipsoid = EarthEllipsoid()
     print("".join(["Эллипсоид Земли\n", earth_ellipsoid.to_str()]))
@@ -74,10 +74,10 @@ if __name__ == '__main__':
 
     # Параметры задачи
     #   Название задачи
-    name = 'Test2'
+    name = 'Time_test'
     #   Начальное и конечное время моделирования
-    initial_simulation_time = datetime(2018, 2, 1, 0, 0, 0)
-    final_simulation_time = datetime(2019, 11, 1, 0, 0, 0)
+    initial_simulation_time = datetime(2017, 7, 1, 0, 0, 0)
+    final_simulation_time = datetime(2017, 7, 4, 0, 0, 0)
     #   Шаг изменения модельного времени в секундах
     step = 1
     #   Максимальный зенитный угол Солнца (градусы)
@@ -145,6 +145,7 @@ if __name__ == '__main__':
     task.to_set_considering_considering_partial_cloudiness(to_consider_partial_cloudiness)
 
     # Моделирование
+    start_time = datetime.now()
     task.to_solve_task(unit_report_time,
                        report_address,
                        report_time_from_initial_time_in_days,
@@ -160,8 +161,8 @@ if __name__ == '__main__':
                        report_data_about_scanned_area,
                        report_scanned_area_in_percents,
                        count_of_numbers_after_point_in_area_report)
-
+    print((datetime.now() - start_time).total_seconds())
     # Подготовка данных к выводу
     output_data_maker = task.to_prepare_data_to_output()
     # Сохранение результатов
-    output_data_maker.to_save_data('long_test_save', 'D:\\results')
+    output_data_maker.to_save_data('time_test_save', 'D:\\results')

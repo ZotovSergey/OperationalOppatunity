@@ -1,11 +1,12 @@
 import math
 import statistics
 import os
+import OutputDataMaker
 from datetime import timedelta
 from calendar import isleap
 from DateManagement import to_determine_date_by_days_number_in_not_leap_year, to_determine_days_number_in_not_leap_year
 from TimeManagment import to_get_unit_in_seconds, seconds_to_unit, unit_in_symbol
-import OutputDataMaker
+
 
 DEFAULT_MAX_ZENITH_ANGLE = 360
 DEFAULT_MAX_CLOUD_SCORE = math.inf
@@ -107,7 +108,6 @@ class Task:
             выполнения задачи, о пролетах и о площади просканированной территории. С помощью этого объекта выводятся
             данные о выполнении задачи, о пролетах и др. в требуемом виде.
     """
-
     def __init__(self):
         self.name = None
         self.satellites_group = None
@@ -199,8 +199,6 @@ class Task:
             self.time_of_solutions - время, когда была решена поставленная задача с точность self.step (datetime).
             Также в консоль и в файл report_address выводятся отчеты (вид отчета см. описание метода to_make_report).
         """
-        #####
-        file = open('D:\\results\\file.txt', 'w')
         # Задание в качестве модельного времени для спутниковой группировки self.SatelliteGroup начального модельного
         #   времени и вычисление координатспутников группировки в это время
         self.satellites_group.to_set_simulation_time(self.initial_simulation_time)
@@ -282,7 +280,7 @@ class Task:
                 #   Моделирование работы спутников из self.SatelliteGroup на следующие self.step секунд. Возвращается
                 #       площадь (кв. м) просканированной площади self.PolygonsGroup, меняется текущее модельное время на
                 #       next_simulation_time
-                scanned_area = self.satellites_group.to_act(next_simulation_time, file)
+                scanned_area = self.satellites_group.to_act(next_simulation_time)
                 #   Изменение времени от последнего отчета
                 time_from_report_last += self.step
                 #   Если просканированная площадь не нулевая...
@@ -343,23 +341,6 @@ class Task:
                         total_seconds()
                     # Присвоение нового текущего модельного времени
                     self.satellites_group.simulation_time = new_simulation_time
-#                    if time_from_report_last >= report_time_sec:
-#                        self.to_output_report(report_file,
-#                                              report_time_from_initial_time,
-#                                              unit_report_time,
-#                                              report_data_about_satellites,
-#                                              count_of_numerals_after_point_in_geo_coordinates,
-#                                              count_of_numerals_after_point_in_altitude,
-#                                              count_of_numerals_after_point_in_velocity,
-#                                              report_main_data_about_solutions,
-#                                              report_main_data_about_overflights,
-#                                              time_unit_of_report,
-#                                              numerals_count_after_point_in_solutions_and_overflights_report,
-#                                              to_skip_time_out_of_observation_period,
-#                                              report_data_about_scanned_area,
-#                                              report_scanned_area_in_percents,
-#                                              count_of_numbers_after_point_in_area_report)
-#                        time_from_report_last % report_time_sec
         # Делается последний отчет о моделирований, и файл с отчетами закрывается, если он был открыт
         if report_file is not None:
             self.to_output_report(report_file,
@@ -378,8 +359,6 @@ class Task:
                                   report_scanned_area_in_percents,
                                   count_of_numbers_after_point_in_area_report)
             report_file.close()
-            #####
-            file.close()
 
     def to_set_name(self, name):
         """

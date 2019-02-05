@@ -710,9 +710,6 @@ class OutputDataMaker:
         # Перевод времени datetime в единицы измерения времени unit_of_time
         if time_axis_in_units:
             time_axis = list(range(0, len(time_axis)))
-            ###initial_time = time_axis[0]
-            ###for i in range(0, len(time_axis)):
-            ###    time_axis[i] = (time_axis[i] - initial_time).total_seconds() / step
         return value_axis, time_axis
 
     @staticmethod
@@ -827,7 +824,7 @@ class OutputDataMaker:
                                 output_in_pdf=False):
         """
         @Описание:
-            Метод принимает данные о гистограме и строит по ним графическое представление с помощью пакета matplotlib.
+            Метод принимает данные о гистограмме и строит по ним графическое представление с помощью пакета matplotlib.
                 Также для метода, задаются параметры графического представления построенной гистограммы: высота, ширина,
                 количество пикселей на дюйм, размеры шрифтов подписей обозначений на осях, заголовка и осей, а также
                 сами заголовок и названия осей. После постраения гистограмма сохраняется по выбранному адресу в png, pdf
