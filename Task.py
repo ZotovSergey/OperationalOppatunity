@@ -2,7 +2,7 @@ import math
 import statistics
 import os
 import OutputDataMaker
-from datetime import timedelta
+from datetime import timedelta, datetime
 from calendar import isleap
 from DateManagement import to_determine_date_by_days_number_in_not_leap_year, to_determine_days_number_in_not_leap_year
 from TimeManagment import to_get_unit_in_seconds, seconds_to_unit, unit_in_symbol
@@ -79,6 +79,7 @@ class Task:
             решений задачи и пролетов спутников self.satellite_group над полигонами self.polygons_group. Также выводит
             отчеты о состоянии системы self.satellite_group, вычисляемых показателяй периодичности, о просканированной
             территории группы полигонов self.polygons_group
+        to_write_text_in_report - записывает заданную строку в файл-отчет (если он задан) и в консоль.
         to_set_name - задает название задачи. Записывает его в поле self.name.
         to_set_satellites_group - задаёт спутниковую группировку, которая будет выполнять задачу, в виде объекта
             SatelliteGroup. Записывает его в поле self.satelliteGroup.
@@ -235,10 +236,10 @@ class Task:
                     "".join(['Начальное модельное время ', str(self.initial_simulation_time),
                              ' не входит в годовой допустимый интервал наблюдения.\nПоэтому начальное модельное время'
                              'меняется на начало следующего периода - ', str(new_initial_simulation_time), '\n'])
-                print(output_about_changing_of_initial_simulation_time)
-                if report_file is not None:
-                    report_file.write(output_about_changing_of_initial_simulation_time)
+                self.to_write_text_in_report(output_about_changing_of_initial_simulation_time, report_file)
                 self.initial_simulation_time = new_initial_simulation_time
+                # Изменение модельного времени для спутников
+                self.satellites_group.to_set_simulation_time(self.initial_simulation_time)
         # Перевод времени между отчетами из единиц измерения времени в секунды, если это время задано
         if unit_report_time is not None:
             report_time_sec = to_get_unit_in_seconds(unit_report_time)
@@ -332,33 +333,44 @@ class Task:
                                                                ': годовой период наблюдения заканчивается.\n'
                                                                'Новый период начинается в ',
                                                                str(new_simulation_time), '\n\n'])
-                    print(report_about_observation_period)
-                    if report_file is not None:
-                        report_file.write(report_about_observation_period)
+                    self.to_write_text_in_report(report_about_observation_period, report_file)
                     # Если во время вне периода наблюдения настовало время отчета, то отчет делается в начале нового
                     #   периода наблюдений
                     time_from_report_last += (new_simulation_time - self.satellites_group.simulation_time).\
                         total_seconds()
-                    # Присвоение нового текущего модельного времени
-                    self.satellites_group.simulation_time = new_simulation_time
+                    # Присвоение нового текущего модельного времени и перемещение спутников в новое модельное время
+                    self.satellites_group.to_set_simulation_time(new_simulation_time)
         # Делается последний отчет о моделирований, и файл с отчетами закрывается, если он был открыт
+        self.to_output_report(report_file,
+                              report_time_from_initial_time,
+                              unit_report_time,
+                              report_data_about_satellites,
+                              count_of_numerals_after_point_in_geo_coordinates,
+                              count_of_numerals_after_point_in_altitude,
+                              count_of_numerals_after_point_in_velocity,
+                              report_main_data_about_solutions,
+                              report_main_data_about_overflights,
+                              time_unit_of_report,
+                              numerals_count_after_point_in_solutions_and_overflights_report,
+                              to_skip_time_out_of_observation_period,
+                              report_data_about_scanned_area,
+                              report_scanned_area_in_percents,
+                              count_of_numbers_after_point_in_area_report)
         if report_file is not None:
-            self.to_output_report(report_file,
-                                  report_time_from_initial_time,
-                                  unit_report_time,
-                                  report_data_about_satellites,
-                                  count_of_numerals_after_point_in_geo_coordinates,
-                                  count_of_numerals_after_point_in_altitude,
-                                  count_of_numerals_after_point_in_velocity,
-                                  report_main_data_about_solutions,
-                                  report_main_data_about_overflights,
-                                  time_unit_of_report,
-                                  numerals_count_after_point_in_solutions_and_overflights_report,
-                                  to_skip_time_out_of_observation_period,
-                                  report_data_about_scanned_area,
-                                  report_scanned_area_in_percents,
-                                  count_of_numbers_after_point_in_area_report)
             report_file.close()
+
+    def to_write_text_in_report(self, text, report_file=None):
+        """
+        @Описание:
+            Метод записывает заданную строку в файл-отчет (если он задан) и в консоль.
+        :param text: строка, которая записывается в отчет и в консоль (String).
+        :param report_file: файл-отчет, в который записывается заданный текст. Если None, то строка text не записывается
+            в report_file. По умолчанию None. (File).
+        :return: записывает строку text в файл report_file и в консоль.
+        """
+        print(text)
+        if report_file is not None:
+            report_file.write(text)
 
     def to_set_name(self, name):
         """
@@ -659,11 +671,8 @@ class Task:
                                      data_about_scanned_area,
                                      scanned_area_in_percents,
                                      count_of_numbers_after_point_in_area_report)
-        # Вывод отчета в консоль
-        print(report)
-        # Вывод отчета в файл txt по адресу report_file, если файл задан
-        if report_file is not None:
-            report_file.write(report)
+        # Вывод отчета
+        self.to_write_text_in_report(report, report_file)
 
     def to_make_report(self, time_from_initial_time=True,
                        time_unit_from_initial_time='days',

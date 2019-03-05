@@ -9,10 +9,9 @@ if __name__ == '__main__':
     # Создание объекта - эллипсоида Земли по умолчанию. Эллипсоид по умолчанию - это эллипсоид из WGS-84.
     earth_ellipsoid = EarthEllipsoid()
     print("".join(["Эллипсоид Земли\n", earth_ellipsoid.to_str()]))
-
     # Входные данные для спутников
     #   ISS №1:
-    #       Название в базе NORAD
+    #       Название в ба.зе NORAD
     ISS_name = 'ISS (ZARYA)'
     #       Адрес файла с данными TLE
     ISS_tle = 'D://TLE//tle.txt'
@@ -76,8 +75,8 @@ if __name__ == '__main__':
     #   Название задачи
     name = 'Time_test'
     #   Начальное и конечное время моделирования
-    initial_simulation_time = datetime(2017, 7, 1, 0, 0, 0)
-    final_simulation_time = datetime(2017, 7, 4, 0, 0, 0)
+    initial_simulation_time = datetime(2017, 5, 1, 0, 0, 0)
+    final_simulation_time = datetime(2017, 6, 1, 0, 0, 0)
     #   Шаг изменения модельного времени в секундах
     step = 1
     #   Максимальный зенитный угол Солнца (градусы)
@@ -95,7 +94,7 @@ if __name__ == '__main__':
 
     # Параметры отчетности
     #   Периоды отчетов
-    unit_report_time = 'weeks'
+    unit_report_time = 'days'
     #   Адрес файла с отчетами
     report_address = 'D:\\results\\Last Version\\test_report_long.txt'
     #   Писать в отчете время от начала моделирования

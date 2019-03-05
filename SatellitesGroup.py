@@ -3,6 +3,7 @@ import Coordinates
 import AnalyticGeometry
 from pyorbital import astronomy, tlefile, orbital
 from shapely import geometry
+from datetime import datetime
 
 
 class SatellitesGroup:
@@ -74,7 +75,9 @@ class SatellitesGroup:
             # Сохранение координат выбранного спутника в текущее время моделирования
             current_coordinates_set = satellite.satellite_coordinates_set
             # Моделирование движения спутника до времени next_simulation_time
+
             satellite.to_move_to_time(next_simulation_time)
+
             next_coordinates_set = satellite.satellite_coordinates_set
             # Определение полигонов достаточно близких моделируемому спутнику, чтобы быть просканированными
             satellite.to_determine_close_polygons()
@@ -289,7 +292,9 @@ class Satellite:
         :param next_time: время в формате UTC в которое определяются координаты моделируемого спутника.
         :return: координаты в объекте класса SatelliteCoordinatesSet записываются в self.satellite_coordinates_set
         """
+        #start_time = datetime.now()
         (pos_x, pos_y, pos_z), (vel_x, vel_y, vel_z) = self.orbit.get_position(next_time, normalize=False)
+        #print((datetime.now() - start_time).total_seconds())
         self.satellite_coordinates_set = SatelliteCoordinateSet(Coordinates.CartesianCoordinates(pos_x, pos_y, pos_z),
                                                                 AnalyticGeometry.Vector(vel_x, vel_y, vel_z),
                                                                 next_time,
